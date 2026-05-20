@@ -89,7 +89,7 @@ class AppStore: ObservableObject {
         playerRating: Int,
         opponentRating: Int,
         didWin: Bool,
-        kFactor: Double = 40
+        kFactor: Double = 64
     ) -> Int {
         let expectedScore = 1.0 / (1.0 + pow(10.0, Double(opponentRating - playerRating) / 400.0))
         let actualScore = didWin ? 1.0 : 0.0

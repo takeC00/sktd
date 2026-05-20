@@ -14,36 +14,42 @@ struct TopView: View {
         }
     }
 
-    var ratingHistories: [Int] {
+		var ratingHistories: [Int] {
 
-        var values = [myRating]
+				let recentMatches = Array(
+						currentCircleMatches
+								.filter {
+										$0.teamAPlayers.contains(store.currentUserName) ||
+										$0.teamBPlayers.contains(store.currentUserName)
+								}
+								.prefix(20)
+				)
 
-        let recentMatches = Array(currentCircleMatches.suffix(30))
+				let signedDiffs = recentMatches.map { match -> Int in
 
-        for match in recentMatches.reversed() {
+						if match.teamAPlayers.contains(store.currentUserName) {
+								return match.winner == "A" ? match.ratingDiff : -match.ratingDiff
+						}
 
-            if match.teamAPlayers.contains(store.currentUserName) {
+						if match.teamBPlayers.contains(store.currentUserName) {
+								return match.winner == "B" ? match.ratingDiff : -match.ratingDiff
+						}
 
-                values.append(
-                    values.last! +
-                    (match.winner == "A"
-                     ? match.ratingDiff
-                     : -match.ratingDiff)
-                )
+						return 0
+				}
 
-            } else if match.teamBPlayers.contains(store.currentUserName) {
+				let totalDiff = signedDiffs.reduce(0, +)
 
-                values.append(
-                    values.last! +
-                    (match.winner == "B"
-                     ? match.ratingDiff
-                     : -match.ratingDiff)
-                )
-            }
-        }
+				var values = [
+						myRating - totalDiff
+				]
 
-        return values
-    }
+				for diff in signedDiffs.reversed() {
+						values.append(values.last! + diff)
+				}
+
+				return values
+		}
 
     var recentMatches: [MatchResult] {
         Array(currentCircleMatches.prefix(3))
@@ -88,7 +94,7 @@ struct TopView: View {
 
                             Spacer()
 
-                            Text("直近30試合")
+                            Text("直近20試合")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
