@@ -3,33 +3,24 @@ import SwiftUI
 struct MatchDetailView: View {
 
     let match: MatchResult
-		let currentUserName: String
-	
-		var isCurrentUserTeamA: Bool {
-				match.teamAPlayers.contains(currentUserName)
-		}
+    let currentUserName: String
 
-		var isWin: Bool {
-				if isCurrentUserTeamA {
-						return match.winner == "A"
-				} else {
-						return match.winner == "B"
-				}
-		}
+    var teamADiff: Int {
+        match.winner == "A" ? match.ratingDiff : -match.ratingDiff
+    }
 
-		var signedRatingDiff: Int {
-				isWin ? match.ratingDiff : -match.ratingDiff
-		}
+    var teamBDiff: Int {
+        match.winner == "B" ? match.ratingDiff : -match.ratingDiff
+    }
 
-		var ratingDiffText: String {
-				signedRatingDiff > 0
-				? "+\(signedRatingDiff)"
-				: "\(signedRatingDiff)"
-		}
+    func diffText(_ diff: Int) -> String {
+        diff > 0 ? "+\(diff)" : "\(diff)"
+    }
 
-		var ratingDiffColor: Color {
-				signedRatingDiff >= 0 ? .green : .red
-		}
+    func diffColor(_ diff: Int) -> Color {
+        diff >= 0 ? .green : .red
+    }
+
     var body: some View {
         List {
             Section(header: Text("試合情報")) {
@@ -56,24 +47,29 @@ struct MatchDetailView: View {
                     Spacer()
                     Text(match.winner == "A" ? "チームA" : "チームB")
                 }
-
-                HStack {
-                    Text("レート変動")
-                    Spacer()
-                    Text(ratingDiffText)
-                        .foregroundColor(ratingDiffColor)
-                }
             }
 
             Section(header: Text("チームA")) {
                 ForEach(match.teamAPlayers, id: \.self) { player in
-                    Text(player)
+                    HStack {
+                        Text(player)
+                        Spacer()
+                        Text(diffText(teamADiff))
+                            .foregroundColor(diffColor(teamADiff))
+                            .bold()
+                    }
                 }
             }
 
             Section(header: Text("チームB")) {
                 ForEach(match.teamBPlayers, id: \.self) { player in
-                    Text(player)
+                    HStack {
+                        Text(player)
+                        Spacer()
+                        Text(diffText(teamBDiff))
+                            .foregroundColor(diffColor(teamBDiff))
+                            .bold()
+                    }
                 }
             }
 
