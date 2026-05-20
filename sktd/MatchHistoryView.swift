@@ -28,9 +28,10 @@ struct MatchHistoryView: View {
                         .foregroundColor(.gray)
                 } else {
                     ForEach(sortedDates, id: \.self) { date in
-                        MatchHistoryDateSection(
-                            date: date,
-                            histories: groupedHistories[date] ?? []
+												MatchHistoryDateSection(
+														date: date,
+														histories: groupedHistories[date] ?? [],
+														currentUserName: store.currentUserName
                         )
                     }
                 }
@@ -44,14 +45,25 @@ struct MatchHistoryDateSection: View {
 
     let date: String
     let histories: [MatchResult]
+    let currentUserName: String
 
     var body: some View {
+
         Section(header: Text(date)) {
+
             ForEach(histories) { history in
+
                 NavigationLink(
-                    destination: MatchDetailView(match: history)
+                    destination: MatchDetailView(
+																		match: history,
+																		currentUserName: currentUserName
+																)
                 ) {
-                    MatchHistoryRowView(history: history)
+
+                    MatchHistoryRowView(
+                        history: history,
+                        currentUserName: currentUserName
+                    )
                 }
             }
         }
@@ -61,21 +73,46 @@ struct MatchHistoryDateSection: View {
 struct MatchHistoryRowView: View {
 
     let history: MatchResult
+    let currentUserName: String
 
-    var opponentText: String {
-        history.teamBPlayers.joined(separator: " / ")
+    var isCurrentUserTeamA: Bool {
+        history.teamAPlayers.contains(currentUserName)
     }
 
-    var resultText: String {
-        history.winner == "A" ? "勝利" : "敗北"
+    var isWin: Bool {
+        if isCurrentUserTeamA {
+            return history.winner == "A"
+        } else {
+            return history.winner == "B"
+        }
+    }
+
+    var opponentText: String {
+        if isCurrentUserTeamA {
+            return history.teamBPlayers.joined(separator: " / ")
+        } else {
+            return history.teamAPlayers.joined(separator: " / ")
+        }
+    }
+
+    var signedRatingDiff: Int {
+        isWin ? history.ratingDiff : -history.ratingDiff
     }
 
     var ratingDiffText: String {
-        history.ratingDiff > 0 ? "+\(history.ratingDiff)" : "\(history.ratingDiff)"
+        signedRatingDiff > 0 ? "+\(signedRatingDiff)" : "\(signedRatingDiff)"
     }
 
     var ratingDiffColor: Color {
-        history.ratingDiff > 0 ? .green : .red
+        signedRatingDiff >= 0 ? .green : .red
+    }
+
+    var resultText: String {
+        isWin ? "勝利" : "敗北"
+    }
+
+    var resultColor: Color {
+        isWin ? .gray : .red
     }
 
     var body: some View {
@@ -86,7 +123,7 @@ struct MatchHistoryRowView: View {
 
                 Text(resultText)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(resultColor)
             }
 
             Spacer()

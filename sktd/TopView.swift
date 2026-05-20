@@ -121,7 +121,10 @@ struct TopView: View {
 
                             ForEach(recentMatches) { match in
 
-                                MatchHistoryRowView(history: match)
+                                MatchHistoryRowView(
+																		history: match,
+																		currentUserName: store.currentUserName
+																)
                                     .padding()
                                     .background(Color.gray.opacity(0.1))
                                     .cornerRadius(12)

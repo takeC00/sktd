@@ -3,15 +3,33 @@ import SwiftUI
 struct MatchDetailView: View {
 
     let match: MatchResult
+		let currentUserName: String
+	
+		var isCurrentUserTeamA: Bool {
+				match.teamAPlayers.contains(currentUserName)
+		}
 
-    var ratingDiffText: String {
-        match.ratingDiff > 0 ? "+\(match.ratingDiff)" : "\(match.ratingDiff)"
-    }
+		var isWin: Bool {
+				if isCurrentUserTeamA {
+						return match.winner == "A"
+				} else {
+						return match.winner == "B"
+				}
+		}
 
-    var ratingDiffColor: Color {
-        match.ratingDiff > 0 ? .green : .red
-    }
+		var signedRatingDiff: Int {
+				isWin ? match.ratingDiff : -match.ratingDiff
+		}
 
+		var ratingDiffText: String {
+				signedRatingDiff > 0
+				? "+\(signedRatingDiff)"
+				: "\(signedRatingDiff)"
+		}
+
+		var ratingDiffColor: Color {
+				signedRatingDiff >= 0 ? .green : .red
+		}
     var body: some View {
         List {
             Section(header: Text("試合情報")) {
