@@ -85,16 +85,41 @@ class AppStore: ObservableObject {
         return ratings.reduce(0, +) / ratings.count
     }
 
-    func calculateEloDiff(
-        playerRating: Int,
-        opponentRating: Int,
-        didWin: Bool,
-        kFactor: Double = 64
-    ) -> Int {
-        let expectedScore = 1.0 / (1.0 + pow(10.0, Double(opponentRating - playerRating) / 400.0))
-        let actualScore = didWin ? 1.0 : 0.0
-        let diff = kFactor * (actualScore - expectedScore)
+	func calculateEloDiff(
+			playerRating: Int,
+			opponentRating: Int,
+			didWin: Bool,
+			kFactor: Double = 64,
+			minimumChange: Int = 5,
+			maximumChange: Int = 40
+	) -> Int {
 
-        return Int(diff.rounded())
-    }
+			let expectedScore =
+					1.0 /
+					(1.0 + pow(
+							10.0,
+							Double(opponentRating - playerRating) / 400.0
+					))
+
+			let actualScore = didWin ? 1.0 : 0.0
+
+			let diff =
+					kFactor *
+					(actualScore - expectedScore)
+
+			var rounded = Int(diff.rounded())
+
+			if didWin {
+
+					rounded = max(rounded, minimumChange)
+					rounded = min(rounded, maximumChange)
+
+			} else {
+
+					rounded = min(rounded, -minimumChange)
+					rounded = max(rounded, -maximumChange)
+			}
+
+			return rounded
+	}
 }
