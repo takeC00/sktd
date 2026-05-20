@@ -16,7 +16,9 @@ struct CircleSwitchView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(currentCircle.name)
                                 .font(.headline)
-
+														Text("競技：\(currentCircle.sportName)")
+																.font(.subheadline)
+																.foregroundColor(.gray)
                             Text(currentCircle.id)
                                 .font(.caption)
                                 .foregroundColor(.gray)
@@ -65,7 +67,9 @@ struct CircleSwitchView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(circle.name)
                                         .foregroundColor(.primary)
-
+																		Text(circle.sportName)
+																				.font(.caption)
+																				.foregroundColor(.gray)
                                     Text(circle.id)
                                         .font(.caption)
                                         .foregroundColor(.gray)

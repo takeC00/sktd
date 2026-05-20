@@ -18,6 +18,7 @@ struct CircleMember: Identifiable {
 struct CircleGroup: Identifiable {
     let id: String
     var name: String
+		var sportName: String
     var ownerUserId: String
 }
 
@@ -101,16 +102,56 @@ let samplePlayers: [Player] = [
         email: "suzuki@example.com",
         rating: 1450
     ),
+
+		Player(
+        id: "user_009",
+        name: "りゅうさん",
+        email: "suzuki@example.com",
+        rating: 5000
+    ),
+
+		Player(
+        id: "user_010",
+        name: "井上さん",
+        email: "suzuki@example.com",
+        rating: 1450
+    ),
+		Player(
+        id: "user_011",
+        name: "中井さん",
+        email: "suzuki@example.com",
+        rating: 1450
+    ),
+		Player(
+        id: "user_012",
+        name: "マシロくん",
+        email: "suzuki@example.com",
+        rating: 1450
+    ),
+		Player(
+        id: "user_013",
+        name: "栗原さん",
+        email: "suzuki@example.com",
+        rating: 100
+    ),
 ]
 let sampleCircleGroups: [CircleGroup] = [
     CircleGroup(
         id: "circle_001",
-        name: "サークル1",
+        name: "高三テニス部",
+        sportName: "テニス",
         ownerUserId: "user_001"
     ),
     CircleGroup(
         id: "circle_002",
-        name: "サークル2",
+        name: "CSL",
+        sportName: "卓球",
+        ownerUserId: "user_001"
+    ),
+    CircleGroup(
+        id: "circle_003",
+        name: "ファミバド",
+        sportName: "バドミントン",
         ownerUserId: "user_001"
     )
 ]
@@ -127,7 +168,15 @@ let sampleCircleMembers: [CircleMember] = [
     CircleMember(userId: "user_005", circleId: "circle_002", rating: 1450, role: "member"),
     CircleMember(userId: "user_006", circleId: "circle_002", rating: 1450, role: "member"),
     CircleMember(userId: "user_007", circleId: "circle_002", rating: 1450, role: "member"),
-    CircleMember(userId: "user_008", circleId: "circle_002", rating: 1450, role: "member")
+    CircleMember(userId: "user_008", circleId: "circle_002", rating: 1450, role: "member"),
+
+		// サークル3：1, 9〜13
+    CircleMember(userId: "user_001", circleId: "circle_003", rating: 1500, role: "admin"),
+    CircleMember(userId: "user_009", circleId: "circle_003", rating: 1450, role: "member"),
+    CircleMember(userId: "user_010", circleId: "circle_003", rating: 1450, role: "member"),
+    CircleMember(userId: "user_011", circleId: "circle_003", rating: 1450, role: "member"),
+    CircleMember(userId: "user_012", circleId: "circle_003", rating: 1450, role: "member"),
+		CircleMember(userId: "user_013", circleId: "circle_003", rating: 1450, role: "member")
 ]
 func formatDate(_ date: Date) -> String {
     let formatter = DateFormatter()

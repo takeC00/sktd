@@ -4,15 +4,17 @@ struct CircleCreateView: View {
 
     @State private var circleName = ""
     @State private var generatedCircleId = ""
+		@State private var sportName = ""
 
-    var isCreateEnabled: Bool {
-        !circleName.isEmpty
-    }
+		var isCreateEnabled: Bool {
+				!circleName.isEmpty && !sportName.isEmpty
+		}
 
     var body: some View {
         Form {
             Section(header: Text("サークル情報")) {
                 TextField("サークル名", text: $circleName)
+								TextField("競技名 例：バドミントン", text: $sportName)
             }
 
             Section {
