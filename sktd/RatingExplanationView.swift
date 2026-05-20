@@ -10,7 +10,7 @@ struct RatingExplanationView: View {
                     .font(.largeTitle)
                     .bold()
 
-                Text("このアプリでは、対戦相手とのレート差に応じて増減するELO方式を使います。")
+                Text("本アプリでは、対戦相手とのレート差に応じて増減するELO方式をベースにしています。")
                     .foregroundColor(.gray)
 
                 explanationCard(
@@ -19,58 +19,90 @@ struct RatingExplanationView: View {
                 )
 
                 VStack(alignment: .leading, spacing: 12) {
+                    Text("ポイント変動ルール")
+                        .font(.headline)
+
+                    ruleRow(title: "最低保証", value: "±5")
+                    ruleRow(title: "最大変動", value: "±40")
+                    ruleRow(title: "変動係数", value: "K = 64")
+
+                    Text("どんな試合でも最低±5は変動し、1試合の最大変動は±40までに制限しています。")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                .padding()
+                .background(Color.gray.opacity(0.08))
+                .cornerRadius(16)
+
+                VStack(alignment: .leading, spacing: 12) {
                     Text("具体例")
                         .font(.headline)
 
                     ratingExample(
-                        title: "格上に勝利",
-                        before: "自分 1500 vs 相手 1700",
+                        title: "同格に勝利",
+                        before: "自分 1800 vs 相手 1800",
                         result: "勝利",
-                        diff: "+30",
+                        diff: "+32",
+                        color: .green
+                    )
+
+                    ratingExample(
+                        title: "格上に勝利",
+                        before: "自分 1500 vs 相手 2000",
+                        result: "勝利",
+                        diff: "+40（上限）",
                         color: .green
                     )
 
                     ratingExample(
                         title: "格下に勝利",
-                        before: "自分 1700 vs 相手 1500",
+                        before: "自分 2200 vs 相手 1200",
                         result: "勝利",
-                        diff: "+10",
+                        diff: "+5（最低保証）",
                         color: .green
                     )
 
                     ratingExample(
                         title: "格下に敗北",
-                        before: "自分 1700 vs 相手 1500",
+                        before: "自分 2200 vs 相手 1200",
                         result: "敗北",
-                        diff: "-30",
+                        diff: "-40（下限）",
                         color: .red
                     )
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("イメージ図")
+                    Text("ダブルスの場合")
                         .font(.headline)
 
+                    Text("ダブルスでは、チームメンバーの平均レートを使って計算します。")
+                        .foregroundColor(.gray)
+
                     HStack {
-                        VStack {
-                            Text("格上")
+                        VStack(spacing: 6) {
+                            Text("チームA")
                                 .font(.caption)
-                            Text("1700")
+                                .foregroundColor(.gray)
+
+                            Text("1600")
                                 .font(.title2)
                                 .bold()
                         }
 
                         Spacer()
 
-                        Image(systemName: "arrow.left.arrow.right")
-                            .font(.title)
+                        Text("vs")
+                            .font(.headline)
+                            .foregroundColor(.gray)
 
                         Spacer()
 
-                        VStack {
-                            Text("自分")
+                        VStack(spacing: 6) {
+                            Text("チームB")
                                 .font(.caption)
-                            Text("1500")
+                                .foregroundColor(.gray)
+
+                            Text("1800")
                                 .font(.title2)
                                 .bold()
                         }
@@ -79,15 +111,12 @@ struct RatingExplanationView: View {
                     .background(Color.blue.opacity(0.08))
                     .cornerRadius(16)
 
-                    Text("レート差が大きい相手に勝つほど、評価が大きく変動します。")
+                    Text("チームAが勝てば格上撃破扱いになり、上がり幅が大きくなります。")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
 
-                explanationCard(
-                    title: "チーム戦の場合",
-                    text: "ダブルスではチームメンバーの平均レートを使って計算します。チームA平均レートとチームB平均レートを比較します。"
-                )
+                Spacer(minLength: 24)
             }
             .padding()
         }
@@ -103,8 +132,17 @@ struct RatingExplanationView: View {
                 .foregroundColor(.gray)
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
+        .background(Color.gray.opacity(0.08))
         .cornerRadius(16)
+    }
+
+    func ruleRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value)
+                .bold()
+        }
     }
 
     func ratingExample(
@@ -130,7 +168,7 @@ struct RatingExplanationView: View {
             Spacer()
 
             Text(diff)
-                .font(.title2)
+                .font(.title3)
                 .bold()
                 .foregroundColor(color)
         }
