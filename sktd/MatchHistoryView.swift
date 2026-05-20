@@ -98,7 +98,7 @@ struct MatchHistoryRowView: View {
             return history.winner == "B"
         }
 
-        return history.winner == "A"
+        return false
     }
 
     var teamAText: String {
@@ -121,12 +121,19 @@ struct MatchHistoryRowView: View {
         return teamBText
     }
 
-    var mainText: String {
+    var listMainText: String {
+        let teamA = history.winner == "A" ? "👑 \(teamAText)" : teamAText
+        let teamB = history.winner == "B" ? "👑 \(teamBText)" : teamBText
+
+        return "\(teamA) vs \(teamB)"
+    }
+
+    var topMainText: String {
         if showOnlyOpponent && isCurrentUserMatch {
             return "\(currentUserName) vs \(opponentText)"
         }
 
-        return "\(teamAText) vs \(teamBText)"
+        return listMainText
     }
 
     var signedRatingDiff: Int {
@@ -152,19 +159,23 @@ struct MatchHistoryRowView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(mainText)
+                Text(showOnlyOpponent ? topMainText : listMainText)
                     .font(.headline)
 
-                Text(resultText)
-                    .font(.caption)
-                    .foregroundColor(resultColor)
+                if showOnlyOpponent {
+                    Text(resultText)
+                        .font(.caption)
+                        .foregroundColor(resultColor)
+                }
             }
 
             Spacer()
 
-            Text(ratingDiffText)
-                .font(.headline)
-                .foregroundColor(ratingDiffColor)
+            if showOnlyOpponent {
+                Text(ratingDiffText)
+                    .font(.headline)
+                    .foregroundColor(ratingDiffColor)
+            }
         }
         .padding(.vertical, 6)
     }
