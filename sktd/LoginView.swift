@@ -15,17 +15,10 @@ struct LoginView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                GeometryReader { geo in
-                    Image("login_bg")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(
-                            width: geo.size.width,
-                            height: geo.size.height
-                        )
-                        .clipped()
-                        .ignoresSafeArea()
-                }
+								Image("login_bg")
+										.resizable()
+										.scaledToFill()
+										.ignoresSafeArea()
 
                 VStack(spacing: 18) {
 
