@@ -51,9 +51,16 @@ struct TopView: View {
 				return values
 		}
 
-    var recentMatches: [MatchResult] {
-        Array(currentCircleMatches.prefix(3))
-    }
+		var recentMatches: [MatchResult] {
+				Array(
+						currentCircleMatches
+								.filter {
+										$0.teamAPlayers.contains(store.currentUserName) ||
+										$0.teamBPlayers.contains(store.currentUserName)
+								}
+								.prefix(3)
+				)
+		}
 
     var body: some View {
 
@@ -109,7 +116,7 @@ struct TopView: View {
 
                     VStack(alignment: .leading, spacing: 12) {
 
-                        Text("直近の試合履歴")
+                        Text("直近の自分の試合履歴")
                             .font(.headline)
 
                         if recentMatches.isEmpty {
@@ -123,7 +130,8 @@ struct TopView: View {
 
                                 MatchHistoryRowView(
 																		history: match,
-																		currentUserName: store.currentUserName
+																		currentUserName: store.currentUserName,
+																		showOnlyOpponent: true
 																)
                                     .padding()
                                     .background(Color.gray.opacity(0.1))

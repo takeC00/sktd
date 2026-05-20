@@ -61,9 +61,10 @@ struct MatchHistoryDateSection: View {
                 ) {
 
                     MatchHistoryRowView(
-                        history: history,
-                        currentUserName: currentUserName
-                    )
+												history: history,
+												currentUserName: currentUserName,
+												showOnlyOpponent: false
+										)
                 }
             }
         }
@@ -74,25 +75,58 @@ struct MatchHistoryRowView: View {
 
     let history: MatchResult
     let currentUserName: String
+    let showOnlyOpponent: Bool
 
     var isCurrentUserTeamA: Bool {
         history.teamAPlayers.contains(currentUserName)
     }
 
+    var isCurrentUserTeamB: Bool {
+        history.teamBPlayers.contains(currentUserName)
+    }
+
+    var isCurrentUserMatch: Bool {
+        isCurrentUserTeamA || isCurrentUserTeamB
+    }
+
     var isWin: Bool {
         if isCurrentUserTeamA {
             return history.winner == "A"
-        } else {
+        }
+
+        if isCurrentUserTeamB {
             return history.winner == "B"
         }
+
+        return history.winner == "A"
+    }
+
+    var teamAText: String {
+        history.teamAPlayers.joined(separator: " / ")
+    }
+
+    var teamBText: String {
+        history.teamBPlayers.joined(separator: " / ")
     }
 
     var opponentText: String {
         if isCurrentUserTeamA {
-            return history.teamBPlayers.joined(separator: " / ")
-        } else {
-            return history.teamAPlayers.joined(separator: " / ")
+            return teamBText
         }
+
+        if isCurrentUserTeamB {
+            return teamAText
+        }
+
+        return teamBText
+    }
+
+    var mainText: String {
+        if showOnlyOpponent && isCurrentUserMatch {
+            return "\(currentUserName) vs \(opponentText)"
+        }
+
+        return "\(teamAText) vs \(teamBText)"
     }
 
     var signedRatingDiff: Int {
@@ -118,7 +152,7 @@ struct MatchHistoryRowView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("vs \(opponentText)")
+                Text(mainText)
                     .font(.headline)
 
                 Text(resultText)
