@@ -131,7 +131,7 @@ var playerOptions: [String] {
                     }
                 }
             }
-            .navigationTitle("試合入力")
+            .navigationTitle("試合結果")
         }
     }
 

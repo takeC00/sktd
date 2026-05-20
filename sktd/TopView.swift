@@ -63,27 +63,27 @@ struct TopView: View {
 
                 VStack(alignment: .leading, spacing: 24) {
 
-                    VStack(alignment: .leading, spacing: 8) {
+										VStack(alignment: .leading, spacing: 8) {
 
-                        Text("現在レーティング")
-                            .font(.headline)
-                            .foregroundColor(.gray)
+												HStack(alignment: .center, spacing: 6) {
 
-                        Text("\(myRating)")
-                            .font(.system(size: 48, weight: .bold))
+														Text("現在レーティング")
+																.font(.headline)
+																.foregroundColor(.gray)
 
-                        NavigationLink(
-                            destination: RatingExplanationView()
-                        ) {
+														NavigationLink(
+																destination: RatingExplanationView()
+														) {
 
-                            Label(
-                                "レーティングの計算方法",
-                                systemImage: "questionmark.circle"
-                            )
-                            .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                    }
+																Image(systemName: "questionmark.circle")
+																		.foregroundColor(.blue)
+																		.font(.subheadline)
+														}
+												}
+
+												Text("\(myRating)")
+														.font(.system(size: 48, weight: .bold))
+										}
 
                     VStack(alignment: .leading, spacing: 12) {
 

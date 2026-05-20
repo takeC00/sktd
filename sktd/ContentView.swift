@@ -27,7 +27,7 @@ struct ContentView: View {
                     }
                 )
                 .tabItem {
-                    Label("試合入力", systemImage: "plus.circle")
+                    Label("試合結果", systemImage: "plus.circle")
                 }
                 .tag(1)
 
