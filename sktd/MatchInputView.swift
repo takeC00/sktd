@@ -69,23 +69,40 @@ var playerOptions: [String] {
                 }
 
                 Section(header: Text("スコア")) {
-                    ForEach(setScores.indices, id: \.self) { index in
-                        HStack {
-                            Text("セット\(index + 1)")
+										ForEach(setScores.indices, id: \.self) { index in
 
-                            Spacer()
+												HStack {
 
-                            TextField("A", text: $setScores[index].teamAScore)
-                                .keyboardType(.numberPad)
-                                .frame(width: 50)
+														Text("セット\(index + 1)")
+																.frame(width: 80, alignment: .leading)
 
-                            Text("-")
+														Spacer()
 
-                            TextField("B", text: $setScores[index].teamBScore)
-                                .keyboardType(.numberPad)
-                                .frame(width: 50)
-                        }
-                    }
+														HStack(spacing: 12) {
+
+																TextField(
+																		"A",
+																		text: $setScores[index].teamAScore
+																)
+																.keyboardType(.numberPad)
+																.multilineTextAlignment(.center)
+																.frame(width: 50)
+
+																Text("-")
+																		.font(.headline)
+																		.frame(width: 20)
+
+																TextField(
+																		"B",
+																		text: $setScores[index].teamBScore
+																)
+																.keyboardType(.numberPad)
+																.multilineTextAlignment(.center)
+																.frame(width: 50)
+														}
+														.frame(width: 140)
+												}
+										}
 
                     Button("セットを追加") {
                         setScores.append(SetScore(teamAScore: "", teamBScore: ""))
