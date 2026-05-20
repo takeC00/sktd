@@ -8,10 +8,10 @@ struct MatchInputView: View {
     @State private var matchType: MatchType = .singles
 
     @State private var teamAPlayer1 = "服部"
-    @State private var teamAPlayer2 = "山田"
+    @State private var teamAPlayer2 = "内田"
 
-    @State private var teamBPlayer1 = "佐藤"
-    @State private var teamBPlayer2 = "鈴木"
+    @State private var teamBPlayer1 = "楢村"
+    @State private var teamBPlayer2 = "福田"
 
     @State private var winner = "A"
 
@@ -19,9 +19,9 @@ struct MatchInputView: View {
         SetScore(teamAScore: "", teamBScore: "")
     ]
 
-var playerOptions: [String] {
-    store.currentCirclePlayers.map { $0.name }
-}
+    var playerOptions: [String] {
+        store.currentCirclePlayers.map { $0.name }
+    }
 
     var body: some View {
         NavigationView {
@@ -69,43 +69,36 @@ var playerOptions: [String] {
                 }
 
                 Section(header: Text("スコア")) {
-										ForEach(setScores.indices, id: \.self) { index in
+                    ForEach(setScores.indices, id: \.self) { index in
+                        HStack {
+                            Text("セット\(index + 1)")
+                                .frame(width: 80, alignment: .leading)
 
-												HStack {
+                            Spacer()
 
-														Text("セット\(index + 1)")
-																.frame(width: 80, alignment: .leading)
+                            HStack(spacing: 12) {
+                                TextField("A", text: $setScores[index].teamAScore)
+                                    .keyboardType(.numberPad)
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 50)
 
-														Spacer()
+                                Text("-")
+                                    .font(.headline)
+                                    .frame(width: 20)
 
-														HStack(spacing: 12) {
-
-																TextField(
-																		"A",
-																		text: $setScores[index].teamAScore
-																)
-																.keyboardType(.numberPad)
-																.multilineTextAlignment(.center)
-																.frame(width: 50)
-
-																Text("-")
-																		.font(.headline)
-																		.frame(width: 20)
-
-																TextField(
-																		"B",
-																		text: $setScores[index].teamBScore
-																)
-																.keyboardType(.numberPad)
-																.multilineTextAlignment(.center)
-																.frame(width: 50)
-														}
-														.frame(width: 140)
-												}
-										}
+                                TextField("B", text: $setScores[index].teamBScore)
+                                    .keyboardType(.numberPad)
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 50)
+                            }
+                            .frame(width: 140)
+                        }
+                    }
 
                     Button("セットを追加") {
-                        setScores.append(SetScore(teamAScore: "", teamBScore: ""))
+                        setScores.append(
+                            SetScore(teamAScore: "", teamBScore: "")
+                        )
                     }
 
                     if setScores.count > 1 {
@@ -131,52 +124,44 @@ var playerOptions: [String] {
                     }
                 }
             }
-            .navigationTitle("試合結果")
+            .navigationTitle("試合入力")
         }
     }
 
-func registerMatch() {
-    let teamA = matchType == .singles
-        ? [teamAPlayer1]
-        : [teamAPlayer1, teamAPlayer2]
+    func registerMatch() {
+        let teamA = matchType == .singles
+            ? [teamAPlayer1]
+            : [teamAPlayer1, teamAPlayer2]
 
-    let teamB = matchType == .singles
-        ? [teamBPlayer1]
-        : [teamBPlayer1, teamBPlayer2]
+        let teamB = matchType == .singles
+            ? [teamBPlayer1]
+            : [teamBPlayer1, teamBPlayer2]
 
-    let teamARating = store.averageRating(for: teamA)
-    let teamBRating = store.averageRating(for: teamB)
+        let teamARating = store.averageRating(for: teamA)
+        let teamBRating = store.averageRating(for: teamB)
 
-    let ratingDiff = store.calculateEloDiff(
-        playerRating: teamARating,
-        opponentRating: teamBRating,
-        didWin: winner == "A"
-    )
+        let ratingDiff = store.calculateEloDiff(
+            playerRating: teamARating,
+            opponentRating: teamBRating,
+            didWin: winner == "A",
+            rule: .normal
+        )
 
-let result = MatchResult(
+        let result = MatchResult(
+            circleId: store.currentCircleId,
+            date: Date(),
+            matchType: matchType,
+            teamAPlayers: teamA,
+            teamBPlayers: teamB,
+            setScores: setScores,
+            winner: winner,
+            ratingDiff: abs(ratingDiff)
+        )
 
-    circleId: store.currentCircleId,
-
-    date: Date(),
-
-    matchType: matchType,
-
-    teamAPlayers: teamA,
-
-    teamBPlayers: teamB,
-
-    setScores: setScores,
-
-    winner: winner,
-
-    ratingDiff: abs(ratingDiff)
-
-)
-
-    store.registerMatch(result)
-    resetForm()
-    onRegistered()
-}
+        store.registerMatch(result)
+        resetForm()
+        onRegistered()
+    }
 
     func resetForm() {
         winner = "A"

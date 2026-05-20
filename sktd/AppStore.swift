@@ -35,26 +35,28 @@ class AppStore: ObservableObject {
 
     func registerMatch(_ result: MatchResult) {
         matchResults.insert(result, at: 0)
-        applyRating(result)
+        applyRating(result, rule: .normal)
     }
 
-    private func applyRating(_ result: MatchResult) {
+    private func applyRating(_ result: MatchResult, rule: RatingRule) {
         for name in result.teamAPlayers {
             updateRating(
                 playerName: name,
-                diff: result.winner == "A" ? result.ratingDiff : -result.ratingDiff
+                diff: result.winner == "A" ? result.ratingDiff : -result.ratingDiff,
+                rule: rule
             )
         }
 
         for name in result.teamBPlayers {
             updateRating(
                 playerName: name,
-                diff: result.winner == "B" ? result.ratingDiff : -result.ratingDiff
+                diff: result.winner == "B" ? result.ratingDiff : -result.ratingDiff,
+                rule: rule
             )
         }
     }
 
-    private func updateRating(playerName: String, diff: Int) {
+    private func updateRating(playerName: String, diff: Int, rule: RatingRule) {
         guard let player = players.first(where: { $0.name == playerName }) else {
             return
         }
@@ -66,7 +68,21 @@ class AppStore: ObservableObject {
             return
         }
 
-        circleMembers[index].rating += diff
+        let currentRating = circleMembers[index].rating
+        var adjustedDiff = diff
+
+        if diff < 0 {
+            let multiplier = lossProtectionMultiplier(
+                rating: currentRating,
+                rule: rule
+            )
+
+            adjustedDiff = Int(Double(diff) * multiplier)
+        }
+
+        let newRating = currentRating + adjustedDiff
+
+        circleMembers[index].rating = max(newRating, rule.minimumRating)
     }
 
     func averageRating(for playerNames: [String]) -> Int {
@@ -85,41 +101,51 @@ class AppStore: ObservableObject {
         return ratings.reduce(0, +) / ratings.count
     }
 
-	func calculateEloDiff(
-			playerRating: Int,
-			opponentRating: Int,
-			didWin: Bool,
-			kFactor: Double = 64,
-			minimumChange: Int = 5,
-			maximumChange: Int = 40
-	) -> Int {
+    func calculateEloDiff(
+        playerRating: Int,
+        opponentRating: Int,
+        didWin: Bool,
+        rule: RatingRule = .normal
+    ) -> Int {
 
-			let expectedScore =
-					1.0 /
-					(1.0 + pow(
-							10.0,
-							Double(opponentRating - playerRating) / 400.0
-					))
+        let expectedScore =
+            1.0 /
+            (1.0 + pow(
+                10.0,
+                Double(opponentRating - playerRating) / 400.0
+            ))
 
-			let actualScore = didWin ? 1.0 : 0.0
+        let actualScore = didWin ? 1.0 : 0.0
 
-			let diff =
-					kFactor *
-					(actualScore - expectedScore)
+        var rounded = Int(
+            (rule.kFactor * (actualScore - expectedScore)).rounded()
+        )
 
-			var rounded = Int(diff.rounded())
+        if didWin {
+            rounded = max(rounded, rule.minimumChange)
+            rounded = min(rounded, rule.maximumChange)
+        } else {
+            rounded = min(rounded, -rule.minimumChange)
+            rounded = max(rounded, -rule.maximumChange)
+        }
 
-			if didWin {
+        return rounded
+    }
 
-					rounded = max(rounded, minimumChange)
-					rounded = min(rounded, maximumChange)
+    func lossProtectionMultiplier(
+        rating: Int,
+        rule: RatingRule = .normal
+    ) -> Double {
 
-			} else {
+        switch rating {
+        case ..<rule.eRankBorder:
+            return rule.fRankProtectionMultiplier
 
-					rounded = min(rounded, -minimumChange)
-					rounded = max(rounded, -maximumChange)
-			}
+        case rule.eRankBorder..<rule.dRankBorder:
+            return rule.eRankProtectionMultiplier
 
-			return rounded
-	}
+        default:
+            return 1.0
+        }
+    }
 }
