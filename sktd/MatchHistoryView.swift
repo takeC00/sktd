@@ -128,13 +128,37 @@ struct MatchHistoryRowView: View {
         return "\(teamA) vs \(teamB)"
     }
 
-    var topMainText: String {
-        if showOnlyOpponent && isCurrentUserMatch {
-            return "\(currentUserName) vs \(opponentText)"
-        }
+		var partnerText: String {
+				if isCurrentUserTeamA {
+						return history.teamAPlayers
+								.filter { $0 != currentUserName }
+								.joined(separator: " / ")
+				}
 
-        return listMainText
-    }
+				if isCurrentUserTeamB {
+						return history.teamBPlayers
+								.filter { $0 != currentUserName }
+								.joined(separator: " / ")
+				}
+
+				return ""
+		}
+
+		var myTeamText: String {
+				if partnerText.isEmpty {
+						return currentUserName
+				}
+
+				return "\(currentUserName) / \(partnerText)"
+		}
+
+		var topMainText: String {
+				if showOnlyOpponent && isCurrentUserMatch {
+						return "\(myTeamText) vs \(opponentText)"
+				}
+
+				return listMainText
+		}
 
     var signedRatingDiff: Int {
         isWin ? history.ratingDiff : -history.ratingDiff

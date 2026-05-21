@@ -16,7 +16,7 @@ struct ContentView: View {
 
                 TopView(store: store)
                     .tabItem {
-                        Label("TOP", systemImage: "house")
+                        Label("Rating", systemImage: "chart.line.uptrend.xyaxis")
                     }
                     .tag(0)
 

@@ -22,7 +22,6 @@ struct RatingExplanationView: View {
                     Text("通常戦のポイント変動")
                         .font(.headline)
 
-                    ruleRow(title: "変動係数", value: "K = 32")
                     ruleRow(title: "最低保証", value: "±5")
                     ruleRow(title: "最大変動", value: "±25")
                     ruleRow(title: "最低レート", value: "800")
@@ -43,7 +42,6 @@ struct RatingExplanationView: View {
                     Text("イベント戦のポイント変動")
                         .font(.headline)
 
-                    ruleRow(title: "変動係数", value: "K = 40")
                     ruleRow(title: "最低保証", value: "±8")
                     ruleRow(title: "最大変動", value: "±32")
 
