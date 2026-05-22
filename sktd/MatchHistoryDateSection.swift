@@ -1,0 +1,49 @@
+import SwiftUI
+
+struct MatchHistoryDateSection: View {
+
+    let date: String
+    let histories: [MatchResult]
+    let currentUserName: String
+
+    var body: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 14
+        ) {
+
+            // MARK: 日付
+
+            Text(date)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(.gray)
+
+            // MARK: 試合一覧
+
+            VStack(spacing: 12) {
+
+                ForEach(histories) { history in
+
+                    NavigationLink {
+
+                        MatchDetailView(
+                            match: history,
+                            currentUserName: currentUserName
+                        )
+
+                    } label: {
+
+                        MatchHistoryRowView(
+                            history: history,
+                            currentUserName: currentUserName,
+                            showOnlyOpponent: false
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
