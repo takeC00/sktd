@@ -183,16 +183,6 @@ struct MatchInputView: View {
                         }
                         .listRowBackground(canRegister ? Color.orange : Color.gray)
                         .disabled(!canRegister)
-
-                        Text("スコア入力後、自動で勝者が判定されます")
-                            .font(.caption2)
-                            .foregroundColor(.gray)
-                    }
-
-                    if hasDuplicatePlayers {
-                        Text("同じ選手は複数箇所に選択できません。")
-                            .font(.caption)
-                            .foregroundColor(.red)
                     }
                 }
             }
