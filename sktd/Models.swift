@@ -34,7 +34,7 @@ struct SetScore: Identifiable {
 }
 
 struct MatchResult: Identifiable {
-    let id = UUID()
+    var id = UUID()
     let circleId: String
     let date: Date
     let matchType: MatchType

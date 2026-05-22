@@ -3,7 +3,7 @@ import SwiftUI
 struct MatchHistoryView: View {
 
     @ObservedObject var store: AppStore
-
+		@State private var editingMatch: MatchResult?
     var currentCircleHistories: [MatchResult] {
         store.matchResults.filter {
             $0.circleId == store.currentCircleId
@@ -31,12 +31,20 @@ struct MatchHistoryView: View {
 												MatchHistoryDateSection(
 														date: date,
 														histories: groupedHistories[date] ?? [],
-														currentUserName: store.currentUserName
-                        )
+														currentUserName: store.currentUserName,
+														store: store,
+														editingMatch: $editingMatch
+												)
                     }
                 }
             }
             .navigationTitle("試合履歴")
+						.sheet(item: $editingMatch) { match in
+								MatchEditView(
+										store: store,
+										originalMatch: match
+								)
+						}
         }
     }
 }
@@ -45,7 +53,9 @@ struct MatchHistoryDateSection: View {
 
     let date: String
     let histories: [MatchResult]
-    let currentUserName: String
+		let currentUserName: String
+		let store: AppStore
+		@Binding var editingMatch: MatchResult?
 
     var body: some View {
 
@@ -53,19 +63,31 @@ struct MatchHistoryDateSection: View {
 
             ForEach(histories) { history in
 
-                NavigationLink(
-                    destination: MatchDetailView(
-																		match: history,
-																		currentUserName: currentUserName
-																)
-                ) {
+								VStack(alignment: .leading) {
 
-                    MatchHistoryRowView(
-												history: history,
-												currentUserName: currentUserName,
-												showOnlyOpponent: false
-										)
-                }
+										NavigationLink(
+												destination: MatchDetailView(
+														match: history,
+														currentUserName: currentUserName
+												)
+										) {
+
+												MatchHistoryRowView(
+														history: history,
+														currentUserName: currentUserName,
+														showOnlyOpponent: false
+												)
+										}
+
+										if history.id == histories.first?.id {
+
+												Button("試合を編集") {
+														editingMatch = history
+												}
+												.font(.caption)
+												.foregroundColor(.orange)
+										}
+								}
             }
         }
     }

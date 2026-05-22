@@ -148,4 +148,48 @@ class AppStore: ObservableObject {
             return 1.0
         }
     }
+
+		func revertRating(_ result: MatchResult) {
+
+				for name in result.teamAPlayers {
+
+						updateRating(
+								playerName: name,
+								diff: result.winner == "A"
+										? -result.ratingDiff
+										: result.ratingDiff,
+								rule: .normal
+						)
+				}
+
+				for name in result.teamBPlayers {
+
+						updateRating(
+								playerName: name,
+								diff: result.winner == "B"
+										? -result.ratingDiff
+										: result.ratingDiff,
+								rule: .normal
+						)
+				}
+		}
+		func updateMatch(_ updated: MatchResult) {
+
+				guard let index = matchResults.firstIndex(where: {
+						$0.id == updated.id
+				}) else {
+						return
+				}
+
+				let oldMatch = matchResults[index]
+
+				// 元レート巻き戻し
+				revertRating(oldMatch)
+
+				// 試合更新
+				matchResults[index] = updated
+
+				// 再計算
+				applyRating(updated, rule: .normal)
+		}
 }
