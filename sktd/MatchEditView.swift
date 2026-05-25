@@ -158,31 +158,41 @@ struct MatchEditView: View {
 
                 // MARK: スコア
 
-                Section(header: Text("セットスコア")) {
+								Section(header: Text("セットスコア")) {
 
-                    ForEach(
-                        setScores.indices,
-                        id: \.self
-                    ) { index in
+										ForEach(
+												setScores.indices,
+												id: \.self
+										) { index in
 
-                        HStack {
+												HStack {
 
-                            TextField(
-                                "A",
-                                text: $setScores[index].teamAScore
-                            )
-                            .keyboardType(.numberPad)
+														Spacer()
 
-                            Text("-")
+														TextField(
+																"A",
+																text: $setScores[index].teamAScore
+														)
+														.keyboardType(.numberPad)
+														.multilineTextAlignment(.center)
+														.frame(width: 60)
 
-                            TextField(
-                                "B",
-                                text: $setScores[index].teamBScore
-                            )
-                            .keyboardType(.numberPad)
-                        }
-                    }
-                }
+														Text("-")
+																.font(.headline)
+																.frame(width: 24)
+
+														TextField(
+																"B",
+																text: $setScores[index].teamBScore
+														)
+														.keyboardType(.numberPad)
+														.multilineTextAlignment(.center)
+														.frame(width: 60)
+
+														Spacer()
+												}
+										}
+								}
 
                 // MARK: 保存
 

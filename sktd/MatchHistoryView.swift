@@ -61,11 +61,12 @@ struct MatchHistoryView: View {
                 .padding(.bottom, 120)
             }
             .background(
-                Color.white.ignoresSafeArea()
+                Color.black.ignoresSafeArea()
             )
 
             .navigationTitle("試合履歴")
             .navigationBarTitleDisplayMode(.large)
+						.foregroundColor(.white)
 
             .sheet(item: $editingMatch) { match in
 

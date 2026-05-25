@@ -35,7 +35,7 @@ struct MatchHistoryRowView: View {
                     .foregroundColor(
                         history.winner == "A"
                         ? .blue
-                        : .black
+                        : .white
                     )
 
                     Text("vs")
@@ -57,7 +57,7 @@ struct MatchHistoryRowView: View {
                     .foregroundColor(
                         history.winner == "B"
                         ? .blue
-                        : .black
+                        : .white
                     )
                 }
                 .font(.headline)
