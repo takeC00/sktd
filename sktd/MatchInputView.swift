@@ -165,7 +165,7 @@ struct MatchInputView: View {
                             } else {
                                 Text(winner == "A" ? "チームA" : "チームB")
                                     .font(.headline)
-                                    .foregroundColor(winner == "A" ? .orange : .green)
+                                    .foregroundColor(.blue)
                             }
                         }
                     }

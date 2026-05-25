@@ -20,7 +20,7 @@ struct MatchHistoryDateSection: View {
             Text(date)
                 .font(.title3)
                 .fontWeight(.bold)
-                .foregroundColor(.gray)
+                .foregroundColor(.black)
 
             // MARK: 試合一覧
 

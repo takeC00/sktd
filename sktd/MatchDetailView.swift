@@ -43,7 +43,7 @@ struct MatchDetailView: View {
                             }
                         }
                         .foregroundColor(
-														.white
+                            .black
                         )
 
                         Text("vs")
@@ -61,7 +61,7 @@ struct MatchDetailView: View {
                             }
                         }
                         .foregroundColor(
-                            .white
+                            .black
                         )
                     }
                     .font(.title3.bold())
@@ -118,7 +118,7 @@ struct MatchDetailView: View {
 																}
 																.fontWeight(.bold)
 																.font(.title3)
-																.foregroundColor(.white)
+																.foregroundColor(.black)
                             }
                             .padding()
                             .background(
@@ -165,13 +165,13 @@ struct MatchDetailView: View {
                         .foregroundColor(.gray)
 
                     Text(formatDate(match.date))
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                 }
             }
             .padding()
         }
         .background(
-            Color.black.ignoresSafeArea()
+            Color.white.ignoresSafeArea()
         )
         .navigationTitle("試合詳細")
         .navigationBarTitleDisplayMode(.inline)

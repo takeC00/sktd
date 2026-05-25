@@ -61,7 +61,7 @@ struct MatchHistoryView: View {
                 .padding(.bottom, 120)
             }
             .background(
-                Color.black.ignoresSafeArea()
+                Color.white.ignoresSafeArea()
             )
 
             .navigationTitle("試合履歴")

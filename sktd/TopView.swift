@@ -15,6 +15,7 @@ struct TopView: View {
     }
 
     var ratingHistories: [Int] {
+
         let targetMatches = Array(
             currentCircleMatches
                 .filter {
@@ -25,12 +26,17 @@ struct TopView: View {
         )
 
         let signedDiffs = targetMatches.map { match -> Int in
+
             if match.teamAPlayers.contains(store.currentUserName) {
-                return match.winner == "A" ? match.ratingDiff : -match.ratingDiff
+                return match.winner == "A"
+                    ? match.ratingDiff
+                    : -match.ratingDiff
             }
 
             if match.teamBPlayers.contains(store.currentUserName) {
-                return match.winner == "B" ? match.ratingDiff : -match.ratingDiff
+                return match.winner == "B"
+                    ? match.ratingDiff
+                    : -match.ratingDiff
             }
 
             return 0
@@ -50,6 +56,7 @@ struct TopView: View {
     }
 
     var recentMatches: [MatchResult] {
+
         Array(
             currentCircleMatches
                 .filter {
@@ -61,17 +68,33 @@ struct TopView: View {
     }
 
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
 
-                    VStack(alignment: .leading, spacing: 8) {
+        NavigationView {
+
+            ScrollView {
+
+                VStack(
+                    alignment: .leading,
+                    spacing: 24
+                ) {
+
+                    // MARK: レーティング
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 8
+                    ) {
+
                         HStack(spacing: 6) {
+
                             Text("レーティング")
                                 .font(.headline)
                                 .foregroundColor(.gray)
 
-                            NavigationLink(destination: RatingExplanationView()) {
+                            NavigationLink(
+                                destination: RatingExplanationView()
+                            ) {
+
                                 Image(systemName: "questionmark.circle")
                                     .foregroundColor(.orange)
                                     .font(.subheadline)
@@ -82,8 +105,15 @@ struct TopView: View {
                     RankGaugeView(rating: myRating)
                         .frame(maxWidth: .infinity)
 
-                    VStack(alignment: .leading, spacing: 12) {
+                    // MARK: レート推移
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 12
+                    ) {
+
                         HStack {
+
                             Text("レーティング推移")
                                 .font(.headline)
 
@@ -100,7 +130,12 @@ struct TopView: View {
                     .padding()
                     .background(Color.white)
                     .cornerRadius(20)
-                    .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 4)
+                    .shadow(
+                        color: .black.opacity(0.16),
+                        radius: 10,
+                        x: 0,
+                        y: 4
+                    )
                 }
                 .padding()
                 .padding(.bottom, 80)
@@ -110,61 +145,195 @@ struct TopView: View {
     }
 }
 
+// MARK: - Rank Gauge
+
 struct RankGaugeView: View {
 
     let rating: Int
 
     var rank: String {
+
         switch rating {
-        case 2200...: return "SS"
-        case 2000..<2200: return "S"
-        case 1800..<2000: return "A"
-        case 1600..<1800: return "B"
-        case 1400..<1600: return "C"
-        case 1200..<1400: return "D"
-        case 1000..<1200: return "E"
-        default: return "F"
+
+        case 2200...:
+            return "SS"
+
+        case 2000..<2200:
+            return "S"
+
+        case 1800..<2000:
+            return "A"
+
+        case 1600..<1800:
+            return "B"
+
+        case 1400..<1600:
+            return "C"
+
+        case 1200..<1400:
+            return "D"
+
+        case 1000..<1200:
+            return "E"
+
+        default:
+            return "F"
+        }
+    }
+
+    // MARK: ランクカラー
+
+    var rankColor: Color {
+
+        switch rank {
+
+        case "SS":
+            return Color.yellow
+
+        case "S":
+            return Color.orange
+
+        case "A":
+            return Color.pink
+
+        case "B":
+            return Color.purple
+
+        case "C":
+            return Color.blue
+
+        case "D":
+            return Color.green
+
+        case "E":
+            return Color(
+                red: 0.55,
+                green: 0.38,
+                blue: 0.22
+            )
+
+        default:
+            return Color.gray
+        }
+    }
+
+    // MARK: 次ランクカラー
+
+    var nextRankColor: Color {
+
+        switch rank {
+
+        case "F":
+            return Color(
+                red: 0.55,
+                green: 0.38,
+                blue: 0.22
+            )
+
+        case "E":
+            return Color.green
+
+        case "D":
+            return Color.blue
+
+        case "C":
+            return Color.purple
+
+        case "B":
+            return Color.pink
+
+        case "A":
+            return Color.orange
+
+        case "S":
+            return Color.yellow
+
+        default:
+            return Color.yellow
         }
     }
 
     var nextRankRating: Int {
+
         switch rating {
-        case 2200...: return rating
-        case 2000..<2200: return 2200
-        case 1800..<2000: return 2000
-        case 1600..<1800: return 1800
-        case 1400..<1600: return 1600
-        case 1200..<1400: return 1400
-        case 1000..<1200: return 1200
-        default: return 1000
+
+        case 2200...:
+            return rating
+
+        case 2000..<2200:
+            return 2200
+
+        case 1800..<2000:
+            return 2000
+
+        case 1600..<1800:
+            return 1800
+
+        case 1400..<1600:
+            return 1600
+
+        case 1200..<1400:
+            return 1400
+
+        case 1000..<1200:
+            return 1200
+
+        default:
+            return 1000
         }
     }
 
     var currentRankBaseRating: Int {
+
         switch rating {
-        case 2200...: return 2200
-        case 2000..<2200: return 2000
-        case 1800..<2000: return 1800
-        case 1600..<1800: return 1600
-        case 1400..<1600: return 1400
-        case 1200..<1400: return 1200
-        case 1000..<1200: return 1000
-        default: return 800
+
+        case 2200...:
+            return 2200
+
+        case 2000..<2200:
+            return 2000
+
+        case 1800..<2000:
+            return 1800
+
+        case 1600..<1800:
+            return 1600
+
+        case 1400..<1600:
+            return 1400
+
+        case 1200..<1400:
+            return 1200
+
+        case 1000..<1200:
+            return 1000
+
+        default:
+            return 800
         }
     }
 
     var progress: Double {
+
         if rating >= 2200 {
             return 1.0
         }
 
-        let range = max(nextRankRating - currentRankBaseRating, 1)
+        let range = max(
+            nextRankRating - currentRankBaseRating,
+            1
+        )
+
         let current = rating - currentRankBaseRating
 
-        return min(max(Double(current) / Double(range), 0), 1)
+        return min(
+            max(Double(current) / Double(range), 0),
+            1
+        )
     }
 
     var remainingPointText: String {
+
         if rating >= 2200 {
             return "最高ランク到達"
         }
@@ -173,25 +342,101 @@ struct RankGaugeView: View {
     }
 
     var body: some View {
-        VStack(spacing: 18) {
 
-            VStack(spacing: 8) {
-                Text(rank)
-                    .font(.system(size: 64, weight: .bold))
-                    .foregroundColor(.black)
+        VStack(spacing: 22) {
+
+            // MARK: ランクバッジ
+
+            ZStack {
+
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(
+
+                        LinearGradient(
+                            colors: [
+                                rankColor,
+                                nextRankColor
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(
+
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.35),
+                                Color.clear
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .center
+                        )
+                    )
+
+                RoundedRectangle(cornerRadius: 28)
+                    .stroke(
+                        Color.white.opacity(0.22),
+                        lineWidth: 2
+                    )
+
+                VStack(spacing: 4) {
+
+                    Text("RANK")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white.opacity(0.85))
+
+                    Text(rank)
+                        .font(
+                            .system(
+                                size: 44,
+                                weight: .black
+                            )
+                        )
+                        .foregroundColor(.white)
+                        .shadow(
+                            color: .black.opacity(0.35),
+                            radius: 4
+                        )
+                }
+            }
+            .frame(width: 140, height: 140)
+            .shadow(
+                color: rankColor.opacity(0.45),
+                radius: 18
+            )
+
+            // MARK: レート
+
+            VStack(spacing: 6) {
 
                 Text("\(rating)")
-                    .font(.system(size: 36, weight: .bold))
+                    .font(
+                        .system(
+                            size: 42,
+                            weight: .black
+                        )
+                    )
                     .foregroundColor(.black)
 
                 Text(remainingPointText)
                     .font(.subheadline)
                     .foregroundColor(.gray)
             }
-						Spacer()
-								.frame(height: 26)
-            GaugeArcView(progress: progress)
+
+            // MARK: Progress
+
+            VStack(spacing: 16) {
+
+                GaugeArcView(
+                    progress: progress,
+                    currentColor: rankColor,
+                    nextColor: nextRankColor
+                )
                 .frame(height: 90)
+            }
         }
         .padding(.top, 28)
         .padding(.horizontal, 24)
@@ -199,22 +444,37 @@ struct RankGaugeView: View {
         .frame(maxWidth: .infinity)
         .background(Color.white)
         .cornerRadius(24)
-        .shadow(color: .black.opacity(0.14), radius: 10, x: 0, y: 4)
+        .shadow(
+            color: .black.opacity(0.14),
+            radius: 10,
+            x: 0,
+            y: 4
+        )
     }
 }
+
+// MARK: - Gauge
 
 struct GaugeArcView: View {
 
     let progress: Double
 
+    let currentColor: Color
+    let nextColor: Color
+
     var body: some View {
+
         GeometryReader { geo in
 
             let width = geo.size.width
             let height = geo.size.height
+
             let lineWidth: CGFloat = 24
 
-            let radius = min(width * 0.42, height * 1.15)
+            let radius = min(
+                width * 0.42,
+                height * 1.15
+            )
 
             let center = CGPoint(
                 x: width / 2,
@@ -222,7 +482,9 @@ struct GaugeArcView: View {
             )
 
             ZStack {
+
                 Path { path in
+
                     path.addArc(
                         center: center,
                         radius: radius,
@@ -240,24 +502,25 @@ struct GaugeArcView: View {
                 )
 
                 Path { path in
+
                     path.addArc(
                         center: center,
                         radius: radius,
                         startAngle: .degrees(205),
-                        endAngle: .degrees(205 + 130 * progress),
+                        endAngle: .degrees(
+                            205 + 130 * progress
+                        ),
                         clockwise: false
                     )
                 }
                 .stroke(
-										LinearGradient(
-												colors: [
-														Color(red: 0.55, green: 0.20, blue: 0.95), // 夕方の紫
-														Color(red: 0.95, green: 0.20, blue: 0.35), // 夕焼け赤
-														Color(red: 1.00, green: 0.42, blue: 0.08), // 濃いオレンジ
-														Color(red: 1.00, green: 0.78, blue: 0.25)  // 朝焼けの金色
-												],
-												startPoint: .topLeading,
-												endPoint: .bottomTrailing
+                    LinearGradient(
+                        colors: [
+                            currentColor,
+                            nextColor
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     ),
                     style: StrokeStyle(
                         lineWidth: lineWidth,
@@ -268,6 +531,8 @@ struct GaugeArcView: View {
         }
     }
 }
+
+// MARK: - Graph
 
 struct RatingGraphView: View {
 
@@ -294,20 +559,28 @@ struct RatingGraphView: View {
     }
 
     var scaleValues: [Int] {
-        stride(from: upperValue, through: lowerValue, by: -50).map { $0 }
+        stride(
+            from: upperValue,
+            through: lowerValue,
+            by: -50
+        ).map { $0 }
     }
 
     var body: some View {
+
         GeometryReader { geometry in
 
             let chartWidth = geometry.size.width - 56
             let chartHeight = geometry.size.height - 40
+
             let leftPadding: CGFloat = 48
             let topPadding: CGFloat = 18
 
             ZStack {
+
                 RoundedRectangle(cornerRadius: 18)
                     .fill(
+
                         LinearGradient(
                             colors: [
                                 Color.orange.opacity(0.10),
@@ -318,15 +591,38 @@ struct RatingGraphView: View {
                         )
                     )
 
+                // グリッド
+
                 ForEach(scaleValues, id: \.self) { value in
-                    let yRatio = CGFloat(value - lowerValue) / CGFloat(range)
-                    let y = topPadding + chartHeight * (1 - yRatio)
+
+                    let yRatio =
+                        CGFloat(value - lowerValue)
+                        / CGFloat(range)
+
+                    let y =
+                        topPadding
+                        + chartHeight * (1 - yRatio)
 
                     Path { path in
-                        path.move(to: CGPoint(x: leftPadding, y: y))
-                        path.addLine(to: CGPoint(x: leftPadding + chartWidth, y: y))
+
+                        path.move(
+                            to: CGPoint(
+                                x: leftPadding,
+                                y: y
+                            )
+                        )
+
+                        path.addLine(
+                            to: CGPoint(
+                                x: leftPadding + chartWidth,
+                                y: y
+                            )
+                        )
                     }
-                    .stroke(Color.gray.opacity(0.22), lineWidth: 1)
+                    .stroke(
+                        Color.gray.opacity(0.22),
+                        lineWidth: 1
+                    )
 
                     Text("\(value)")
                         .font(.caption2)
@@ -334,25 +630,56 @@ struct RatingGraphView: View {
                         .position(x: 24, y: y)
                 }
 
+                // ライン
+
                 Path { path in
+
                     for index in values.indices {
-                        let x = leftPadding + chartWidth * CGFloat(index) / CGFloat(max(values.count - 1, 1))
-                        let yRatio = CGFloat(values[index] - lowerValue) / CGFloat(range)
-                        let y = topPadding + chartHeight * (1 - yRatio)
+
+                        let x =
+                            leftPadding
+                            + chartWidth
+                            * CGFloat(index)
+                            / CGFloat(
+                                max(values.count - 1, 1)
+                            )
+
+                        let yRatio =
+                            CGFloat(values[index] - lowerValue)
+                            / CGFloat(range)
+
+                        let y =
+                            topPadding
+                            + chartHeight * (1 - yRatio)
 
                         if index == 0 {
-                            path.move(to: CGPoint(x: x, y: y))
+
+                            path.move(
+                                to: CGPoint(x: x, y: y)
+                            )
+
                         } else {
-                            path.addLine(to: CGPoint(x: x, y: y))
+
+                            path.addLine(
+                                to: CGPoint(x: x, y: y)
+                            )
                         }
                     }
                 }
                 .stroke(
                     LinearGradient(
                         colors: [
-                            Color(red: 1.0, green: 0.35, blue: 0.05),
+                            Color(
+                                red: 1.0,
+                                green: 0.35,
+                                blue: 0.05
+                            ),
                             Color.orange,
-                            Color(red: 1.0, green: 0.65, blue: 0.15)
+                            Color(
+                                red: 1.0,
+                                green: 0.65,
+                                blue: 0.15
+                            )
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -364,25 +691,51 @@ struct RatingGraphView: View {
                     )
                 )
 
-                ForEach(values.indices, id: \.self) { index in
-                    let x = leftPadding + chartWidth * CGFloat(index) / CGFloat(max(values.count - 1, 1))
-                    let yRatio = CGFloat(values[index] - lowerValue) / CGFloat(range)
-                    let y = topPadding + chartHeight * (1 - yRatio)
+                // 点
 
-								Circle()
-										.fill(Color.white)
-										.frame(
-												width: index == values.indices.last ? 14 : 9,
-												height: index == values.indices.last ? 14 : 9
-										)
-										.overlay(
-												Circle()
-														.stroke(
-																Color(red: 1.00, green: 0.42, blue: 0.08),
-																lineWidth: 2
-														)
-										)
-										.position(x: x, y: y)
+                ForEach(values.indices, id: \.self) { index in
+
+                    let x =
+                        leftPadding
+                        + chartWidth
+                        * CGFloat(index)
+                        / CGFloat(
+                            max(values.count - 1, 1)
+                        )
+
+                    let yRatio =
+                        CGFloat(values[index] - lowerValue)
+                        / CGFloat(range)
+
+                    let y =
+                        topPadding
+                        + chartHeight * (1 - yRatio)
+
+                    Circle()
+                        .fill(Color.white)
+                        .frame(
+                            width:
+                                index == values.indices.last
+                                ? 14
+                                : 9,
+                            height:
+                                index == values.indices.last
+                                ? 14
+                                : 9
+                        )
+                        .overlay(
+
+                            Circle()
+                                .stroke(
+                                    Color(
+                                        red: 1.00,
+                                        green: 0.42,
+                                        blue: 0.08
+                                    ),
+                                    lineWidth: 2
+                                )
+                        )
+                        .position(x: x, y: y)
                 }
             }
         }
