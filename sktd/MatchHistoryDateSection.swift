@@ -2,6 +2,8 @@ import SwiftUI
 
 struct MatchHistoryDateSection: View {
 
+    @ObservedObject var store: AppStore
+
     let date: String
     let histories: [MatchResult]
     let currentUserName: String
@@ -29,6 +31,7 @@ struct MatchHistoryDateSection: View {
                     NavigationLink {
 
                         MatchDetailView(
+                            store: store,
                             match: history,
                             currentUserName: currentUserName
                         )

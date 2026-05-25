@@ -49,6 +49,7 @@ struct MatchHistoryView: View {
                     ForEach(sortedDates, id: \.self) { date in
 
                         MatchHistoryDateSection(
+                            store: store,
                             date: date,
                             histories: groupedHistories[date] ?? [],
                             currentUserName: store.currentUserName
@@ -63,12 +64,8 @@ struct MatchHistoryView: View {
                 Color.black.ignoresSafeArea()
             )
 
-            // MARK: タイトル
-
             .navigationTitle("試合履歴")
             .navigationBarTitleDisplayMode(.large)
-
-            // MARK: 編集画面
 
             .sheet(item: $editingMatch) { match in
 
@@ -77,32 +74,6 @@ struct MatchHistoryView: View {
                     originalMatch: match
                 )
             }
-
-            // MARK: 編集ボタン
-
-            .toolbar {
-
-                if let latestMatch = currentCircleHistories.first {
-
-                    ToolbarItem(
-                        placement: .topBarTrailing
-                    ) {
-
-												Button {
-
-														editingMatch = latestMatch
-
-												} label: {
-
-														Image(systemName: "square.and.pencil")
-																.font(.system(size: 20, weight: .bold))
-																.frame(width: 44, height: 44)
-
-												}
-                    }
-                }
-            }
-						.offset(y: 40)
         }
     }
 

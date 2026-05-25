@@ -101,27 +101,6 @@ struct TopView: View {
                     .background(Color.white)
                     .cornerRadius(20)
                     .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 4)
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("直近の自分の試合履歴")
-                            .font(.headline)
-
-                        if recentMatches.isEmpty {
-                            Text("まだ試合履歴がありません")
-                                .foregroundColor(.gray)
-                        } else {
-                            ForEach(recentMatches) { match in
-                                MatchHistoryRowView(
-                                    history: match,
-                                    currentUserName: store.currentUserName,
-                                    showOnlyOpponent: true
-                                )
-                                .padding()
-                                .background(Color.gray.opacity(0.08))
-                                .cornerRadius(16)
-                            }
-                        }
-                    }
                 }
                 .padding()
                 .padding(.bottom, 80)
