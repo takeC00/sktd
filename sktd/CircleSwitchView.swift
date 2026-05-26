@@ -31,6 +31,38 @@ struct CircleSwitchView: View {
                     }
                 }
 
+                Section(header: Text("所属サークル")) {
+                    ForEach(joinedCircles) { circle in
+                        Button(action: {
+                            store.currentCircleId = circle.id
+                            inviteCode = ""
+                            copied = false
+                        }) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(circle.name)
+                                        .foregroundColor(.primary)
+
+                                    Text("競技：\(circle.sportName)")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+
+                                    Text(circle.id)
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+
+                                Spacer()
+
+                                if store.currentCircleId == circle.id {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section(header: Text("招待コード")) {
                     Button("招待コードを発行する") {
                         inviteCode = generateInviteCode()
@@ -70,38 +102,6 @@ struct CircleSwitchView: View {
                         Text(joinMessage)
                             .font(.caption)
                             .foregroundColor(.gray)
-                    }
-                }
-
-                Section(header: Text("所属サークル")) {
-                    ForEach(joinedCircles) { circle in
-                        Button(action: {
-                            store.currentCircleId = circle.id
-                            inviteCode = ""
-                            copied = false
-                        }) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(circle.name)
-                                        .foregroundColor(.primary)
-
-                                    Text("競技：\(circle.sportName)")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-
-                                    Text(circle.id)
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                }
-
-                                Spacer()
-
-                                if store.currentCircleId == circle.id {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                        }
                     }
                 }
             }

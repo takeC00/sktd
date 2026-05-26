@@ -4,65 +4,78 @@ struct ContentView: View {
 
     @StateObject private var store = AppStore()
 
-    @State private var selectedTab = 0
+    @StateObject private var authManager =
+        FirebaseAuthManager.shared
 
-    @State private var isLoggedIn = false
+    @State private var selectedTab = 0
 
     var body: some View {
 
-        if isLoggedIn {
+        if authManager.isLoggedIn {
 
             TabView(selection: $selectedTab) {
 
                 TopView(store: store)
                     .tabItem {
-                        Label("Rating", systemImage: "chart.line.uptrend.xyaxis")
+
+                        Label(
+                            "Rating",
+                            systemImage:
+                                "chart.line.uptrend.xyaxis"
+                        )
                     }
                     .tag(0)
 
                 MatchInputView(
                     store: store,
                     onRegistered: {
+
                         selectedTab = 0
                     }
                 )
                 .tabItem {
-                    Label("試合結果", systemImage: "plus.circle")
+
+                    Label(
+                        "試合結果",
+                        systemImage: "plus.circle"
+                    )
                 }
                 .tag(1)
 
                 MatchHistoryView(store: store)
                     .tabItem {
-                        Label("履歴", systemImage: "clock")
+
+                        Label(
+                            "履歴",
+                            systemImage: "clock"
+                        )
                     }
                     .tag(2)
 
                 RankingView(store: store)
                     .tabItem {
-                        Label("ランキング", systemImage: "crown")
+
+                        Label(
+                            "ランキング",
+                            systemImage: "crown"
+                        )
                     }
                     .tag(3)
 
-								CircleSwitchView(store: store)
-										.tabItem {
-												Label("サークル", systemImage: "person.3")
-										}
-										.tag(4)
+                CircleSwitchView(store: store)
+                    .tabItem {
+
+                        Label(
+                            "サークル",
+                            systemImage: "person.3"
+                        )
+                    }
+                    .tag(4)
             }
 
         } else {
 
-            LoginView {
-                isLoggedIn = true
-            }
+            LoginView()
         }
-    }
-}
-
-struct ContentView_Previews: PreviewProvider {
-
-    static var previews: some View {
-
-        ContentView()
     }
 }

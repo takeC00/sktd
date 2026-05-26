@@ -1,16 +1,18 @@
-//
-//  sktdApp.swift
-//  sktd
-//
-//  Created by 服部剛士 on 2026/05/18.
-//
-
 import SwiftUI
+import FirebaseCore
 
 @main
 struct sktdApp: App {
+
+    init() {
+
+        FirebaseApp.configure()
+    }
+
     var body: some Scene {
+
         WindowGroup {
+
             ContentView()
         }
     }
