@@ -4,11 +4,20 @@ struct TopView: View {
 
     @ObservedObject var store: AppStore
 
+    @StateObject private var authManager =
+        FirebaseAuthManager.shared
+
+    @State private var showLogoutAlert = false
+
     var myRating: Int {
-        store.ratingInCurrentCircle(userId: store.currentUserId)
+
+        store.ratingInCurrentCircle(
+            userId: store.currentUserId
+        )
     }
 
     var currentCircleMatches: [MatchResult] {
+
         store.matchResults.filter {
             $0.circleId == store.currentCircleId
         }
@@ -19,21 +28,34 @@ struct TopView: View {
         let targetMatches = Array(
             currentCircleMatches
                 .filter {
-                    $0.teamAPlayers.contains(store.currentUserName) ||
-                    $0.teamBPlayers.contains(store.currentUserName)
+
+                    $0.teamAPlayers.contains(
+                        store.currentUserName
+                    )
+                    ||
+                    $0.teamBPlayers.contains(
+                        store.currentUserName
+                    )
                 }
                 .prefix(20)
         )
 
-        let signedDiffs = targetMatches.map { match -> Int in
+        let signedDiffs = targetMatches.map {
+            match -> Int in
 
-            if match.teamAPlayers.contains(store.currentUserName) {
+            if match.teamAPlayers.contains(
+                store.currentUserName
+            ) {
+
                 return match.winner == "A"
                     ? match.ratingDiff
                     : -match.ratingDiff
             }
 
-            if match.teamBPlayers.contains(store.currentUserName) {
+            if match.teamBPlayers.contains(
+                store.currentUserName
+            ) {
+
                 return match.winner == "B"
                     ? match.ratingDiff
                     : -match.ratingDiff
@@ -42,14 +64,18 @@ struct TopView: View {
             return 0
         }
 
-        let totalDiff = signedDiffs.reduce(0, +)
+        let totalDiff =
+            signedDiffs.reduce(0, +)
 
         var values = [
             myRating - totalDiff
         ]
 
         for diff in signedDiffs.reversed() {
-            values.append(values.last! + diff)
+
+            values.append(
+                values.last! + diff
+            )
         }
 
         return values
@@ -60,8 +86,14 @@ struct TopView: View {
         Array(
             currentCircleMatches
                 .filter {
-                    $0.teamAPlayers.contains(store.currentUserName) ||
-                    $0.teamBPlayers.contains(store.currentUserName)
+
+                    $0.teamAPlayers.contains(
+                        store.currentUserName
+                    )
+                    ||
+                    $0.teamBPlayers.contains(
+                        store.currentUserName
+                    )
                 }
                 .prefix(3)
         )
@@ -92,18 +124,24 @@ struct TopView: View {
                                 .foregroundColor(.gray)
 
                             NavigationLink(
-                                destination: RatingExplanationView()
+                                destination:
+                                    RatingExplanationView()
                             ) {
 
-                                Image(systemName: "questionmark.circle")
-                                    .foregroundColor(.orange)
-                                    .font(.subheadline)
+                                Image(
+                                    systemName:
+                                        "questionmark.circle"
+                                )
+                                .foregroundColor(.orange)
+                                .font(.subheadline)
                             }
                         }
                     }
 
-                    RankGaugeView(rating: myRating)
-                        .frame(maxWidth: .infinity)
+                    RankGaugeView(
+                        rating: myRating
+                    )
+                    .frame(maxWidth: .infinity)
 
                     // MARK: レート推移
 
@@ -124,8 +162,10 @@ struct TopView: View {
                                 .foregroundColor(.gray)
                         }
 
-                        RatingGraphView(values: ratingHistories)
-                            .frame(height: 220)
+                        RatingGraphView(
+                            values: ratingHistories
+                        )
+                        .frame(height: 220)
                     }
                     .padding()
                     .background(Color.white)
@@ -141,6 +181,57 @@ struct TopView: View {
                 .padding(.bottom, 80)
             }
             .navigationTitle("Rating")
+
+            // MARK: ログアウト
+
+            .toolbar {
+
+                ToolbarItem(
+                    placement: .topBarTrailing
+                ) {
+
+                    Button {
+
+                        showLogoutAlert = true
+
+                    } label: {
+
+                        Image(
+                            systemName:
+                                "rectangle.portrait.and.arrow.right"
+                        )
+                        .foregroundColor(.red)
+                    }
+                }
+            }
+
+            // MARK: ログアウト確認
+
+            .alert(
+                "ログアウトしますか？",
+                isPresented: $showLogoutAlert
+            ) {
+
+                Button(
+                    "キャンセル",
+                    role: .cancel
+                ) {
+                }
+
+                Button(
+                    "ログアウト",
+                    role: .destructive
+                ) {
+
+                    authManager.logout()
+                }
+
+            } message: {
+
+                Text(
+                    "現在のアカウントからログアウトします。"
+                )
+            }
         }
     }
 }
@@ -324,10 +415,15 @@ struct RankGaugeView: View {
             1
         )
 
-        let current = rating - currentRankBaseRating
+        let current =
+            rating - currentRankBaseRating
 
         return min(
-            max(Double(current) / Double(range), 0),
+            max(
+                Double(current)
+                / Double(range),
+                0
+            ),
             1
         )
     }
@@ -349,44 +445,52 @@ struct RankGaugeView: View {
 
             ZStack {
 
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(
+                RoundedRectangle(
+                    cornerRadius: 28
+                )
+                .fill(
 
-                        LinearGradient(
-                            colors: [
-                                rankColor,
-                                nextRankColor
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                    LinearGradient(
+                        colors: [
+                            rankColor,
+                            nextRankColor
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
+                )
 
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(
+                RoundedRectangle(
+                    cornerRadius: 28
+                )
+                .fill(
 
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.35),
-                                Color.clear
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .center
-                        )
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.35),
+                            Color.clear
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .center
                     )
+                )
 
-                RoundedRectangle(cornerRadius: 28)
-                    .stroke(
-                        Color.white.opacity(0.22),
-                        lineWidth: 2
-                    )
+                RoundedRectangle(
+                    cornerRadius: 28
+                )
+                .stroke(
+                    Color.white.opacity(0.22),
+                    lineWidth: 2
+                )
 
                 VStack(spacing: 4) {
 
                     Text("RANK")
                         .font(.caption2)
                         .fontWeight(.bold)
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(
+                            .white.opacity(0.85)
+                        )
 
                     Text(rank)
                         .font(
