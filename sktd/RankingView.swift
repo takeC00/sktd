@@ -3,28 +3,30 @@ import SwiftUI
 struct RankingView: View {
 
     @ObservedObject var store: AppStore
-		var rankedPlayers: [Player] {
-				store.currentCirclePlayers.sorted {
-						store.ratingInCurrentCircle(userId: $0.id) > store.ratingInCurrentCircle(userId: $1.id)
-				}
-		}
+
+    @StateObject private var authManager =
+        FirebaseAuthManager.shared
+
+    var rankedMembers: [CircleMembership] {
+        authManager.currentCircleMembers.sorted { $0.rating > $1.rating }
+    }
     var body: some View {
         NavigationView {
             List {
-                ForEach(Array(rankedPlayers.enumerated()), id: \.element.id) { index, player in
+                ForEach(Array(rankedMembers.enumerated()), id: \.element.id) { index, member in
                     HStack(spacing: 12) {
                         Text("\(index + 1)")
                             .font(.headline)
                             .frame(width: 32, height: 32)
                             .background(rankColor(index: index))
                             .foregroundColor(.white)
-                            .clipShape(Circle())
+														.clipShape(SwiftUI.Circle())
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(player.name)
+                            Text(member.userName)
                                 .font(.headline)
 
-                            Text("Rating \(store.ratingInCurrentCircle(userId: player.id))")
+                            Text("Rating \(member.rating)")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
@@ -35,6 +37,9 @@ struct RankingView: View {
                 }
             }
             .navigationTitle("ランキング")
+            .onAppear {
+                authManager.refreshCircles()
+            }
         }
     }
 

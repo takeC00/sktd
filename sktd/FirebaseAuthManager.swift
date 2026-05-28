@@ -2,15 +2,32 @@ import Foundation
 import Combine
 import FirebaseAuth
 import FirebaseFirestore
-final class FirebaseAuthManager: ObservableObject {
 
-    static let shared = FirebaseAuthManager()
+final class FirebaseAuthManager:
+    ObservableObject {
 
-    @Published var currentUser: FirebaseAuth.User?
+    static let shared =
+        FirebaseAuthManager()
+
+    @Published var currentUser:
+        User?
+
+    // 現在表示するサークル（users.currentCircleId）
+    @Published var currentCircleId: String?
+
+    // 所属しているサークル一覧（circles.memberIds に uid が含まれる）
+    @Published var joinedCircles: [Circle] = []
+
+    // 選択中サークルの所属メンバー（中間テーブル）
+    @Published var currentCircleMembers: [CircleMembership] = []
+
+    private let db =
+        Firestore.firestore()
 
     init() {
 
-        self.currentUser = Auth.auth().currentUser
+        self.currentUser =
+            Auth.auth().currentUser
     }
 
     // MARK: 新規登録
@@ -19,7 +36,9 @@ final class FirebaseAuthManager: ObservableObject {
         email: String,
         password: String,
         name: String,
-        completion: @escaping (Result<Void, Error>) -> Void
+        completion: @escaping (
+            Result<Void, Error>
+        ) -> Void
     ) {
 
         Auth.auth().createUser(
@@ -33,32 +52,43 @@ final class FirebaseAuthManager: ObservableObject {
                 return
             }
 
-            guard let user = result?.user else {
+            guard let user =
+                result?.user else {
+
                 return
             }
 
-            // Firestore保存
-
-            let db = Firestore.firestore()
-
-            db.collection("users")
+            self.db
+                .collection("users")
                 .document(user.uid)
                 .setData([
 
                     "name": name,
+
                     "email": email,
+
                     "rating": 1500,
-                    "createdAt": Timestamp()
+
+                    "currentCircleId": NSNull(),
+
+                    "createdAt":
+                        Timestamp()
 
                 ]) { error in
 
                     if let error = error {
 
-                        completion(.failure(error))
+                        completion(
+                            .failure(error)
+                        )
                         return
                     }
 
-                    self.currentUser = user
+                    DispatchQueue.main.async {
+
+                        self.currentUser =
+                            user
+                    }
 
                     completion(.success(()))
                 }
@@ -70,7 +100,9 @@ final class FirebaseAuthManager: ObservableObject {
     func login(
         email: String,
         password: String,
-        completion: @escaping (Result<Void, Error>) -> Void
+        completion: @escaping (
+            Result<Void, Error>
+        ) -> Void
     ) {
 
         Auth.auth().signIn(
@@ -84,8 +116,13 @@ final class FirebaseAuthManager: ObservableObject {
                 return
             }
 
-            self.currentUser = result?.user
+            DispatchQueue.main.async {
 
+                self.currentUser =
+                    result?.user
+            }
+
+            self.refreshCircles()
             completion(.success(()))
         }
     }
@@ -98,18 +135,428 @@ final class FirebaseAuthManager: ObservableObject {
 
             try Auth.auth().signOut()
 
-            self.currentUser = nil
+            DispatchQueue.main.async {
+
+                self.currentUser = nil
+                self.currentCircleId = nil
+                self.joinedCircles = []
+            }
 
         } catch {
 
-            print(error.localizedDescription)
+            print(
+                error.localizedDescription
+            )
         }
+    }
+
+    // MARK: サークル作成
+
+    func createCircle(
+        name: String,
+        sportName: String,
+        description: String = "",
+        completion: @escaping (
+            Result<String, Error>
+        ) -> Void
+    ) {
+
+				guard let uid =
+						Auth.auth().currentUser?.uid else {
+
+						completion(
+								.failure(
+										NSError(
+												domain: "",
+												code: -1,
+												userInfo: [
+														NSLocalizedDescriptionKey:
+																"ログイン情報が取得できません"
+												]
+										)
+								)
+						)
+
+						return
+				}
+
+        let document =
+            db.collection("circles")
+            .document()
+
+        let circleId =
+            document.documentID
+
+        let circleCode =
+            String(circleId.prefix(6))
+            .uppercased()
+
+        let data: [String: Any] = [
+
+            "name": name,
+
+            "description": description,
+
+            "sportName": sportName,
+
+            "ownerId": uid,
+
+            "memberIds": [uid],
+
+            "circleCode": circleCode,
+
+            "createdAt": Timestamp()
+        ]
+
+        document.setData(data) { error in
+
+            if let error = error {
+
+                completion(.failure(error))
+                return
+            }
+
+            self.db
+                .collection("users")
+                .document(uid)
+                .updateData([
+
+                    "currentCircleId": circleId
+                ]) { error in
+                    if let error = error {
+                        completion(.failure(error))
+                        return
+                    }
+
+                    self.upsertMembership(
+                        circleId: circleId,
+                        userId: uid,
+                        role: "admin"
+                    ) { _ in
+                        self.refreshCircles()
+                        completion(.success(circleId))
+                    }
+                }
+        }
+    }
+
+    // MARK: サークル参加（招待コード）
+
+    func joinCircle(
+        code: String,
+        completion: @escaping (Result<String, Error>) -> Void
+    ) {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            completion(
+                .failure(
+                    NSError(
+                        domain: "",
+                        code: -1,
+                        userInfo: [
+                            NSLocalizedDescriptionKey:
+                                "ログイン情報が取得できません"
+                        ]
+                    )
+                )
+            )
+            return
+        }
+
+        let normalizedCode = code
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+
+        if normalizedCode.isEmpty {
+            completion(
+                .failure(
+                    NSError(
+                        domain: "",
+                        code: -2,
+                        userInfo: [
+                            NSLocalizedDescriptionKey:
+                                "招待コードを入力してください"
+                        ]
+                    )
+                )
+            )
+            return
+        }
+
+        db.collection("circles")
+            .whereField("circleCode", isEqualTo: normalizedCode)
+            .limit(to: 1)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let doc = snapshot?.documents.first else {
+                    completion(
+                        .failure(
+                            NSError(
+                                domain: "",
+                                code: -3,
+                                userInfo: [
+                                    NSLocalizedDescriptionKey:
+                                        "該当するサークルが見つかりません"
+                                ]
+                            )
+                        )
+                    )
+                    return
+                }
+
+                let circleId = doc.documentID
+
+                // circles.memberIds に追加
+                self.db.collection("circles")
+                    .document(circleId)
+                    .updateData([
+                        "memberIds": FieldValue.arrayUnion([uid])
+                    ]) { error in
+                        if let error = error {
+                            completion(.failure(error))
+                            return
+                        }
+
+                        // users.currentCircleId を更新
+                        self.db.collection("users")
+                            .document(uid)
+                            .updateData([
+                                "currentCircleId": circleId
+                            ]) { error in
+                                if let error = error {
+                                    completion(.failure(error))
+                                    return
+                                }
+
+                                self.upsertMembership(
+                                    circleId: circleId,
+                                    userId: uid,
+                                    role: "member"
+                                ) { _ in
+                                    self.refreshCircles()
+                                    completion(.success(circleId))
+                                }
+                            }
+                    }
+            }
+    }
+
+    // MARK: サークル状態更新
+
+    func refreshCircles() {
+        fetchCurrentCircle()
+        fetchJoinedCircles()
+        fetchCurrentCircleMembers()
+    }
+
+    func setCurrentCircle(circleId: String, completion: ((Result<Void, Error>) -> Void)? = nil) {
+        guard let uid = currentUser?.uid else {
+            completion?(
+                .failure(
+                    NSError(
+                        domain: "",
+                        code: -1,
+                        userInfo: [NSLocalizedDescriptionKey: "ログイン情報が取得できません"]
+                    )
+                )
+            )
+            return
+        }
+
+        db.collection("users")
+            .document(uid)
+            .updateData(["currentCircleId": circleId]) { error in
+                if let error = error {
+                    completion?(.failure(error))
+                    return
+                }
+                DispatchQueue.main.async {
+                    self.currentCircleId = circleId
+                }
+                self.fetchCurrentCircleMembers()
+                completion?(.success(()))
+            }
+    }
+
+    func fetchCurrentCircle() {
+
+				guard let uid =
+						currentUser?.uid else {
+
+						return
+				}
+
+				db.collection("users")
+						.document(uid)
+						.getDocument { snapshot, error in
+
+								guard let data =
+										snapshot?.data() else {
+
+										return
+								}
+
+								let currentCircleId =
+										data["currentCircleId"]
+										as? String
+
+								DispatchQueue.main.async {
+                                    self.currentCircleId = currentCircleId
+								}
+                                self.fetchCurrentCircleMembers()
+						}
+		}
+
+    // MARK: 中間テーブル（所属メンバー）
+
+    private func upsertMembership(
+        circleId: String,
+        userId: String,
+        role: String,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        db.collection("users")
+            .document(userId)
+            .getDocument { snapshot, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                let userName =
+                    (snapshot?.data()?["name"] as? String) ?? "Unknown"
+
+                let docId = "\(circleId)_\(userId)"
+                let data: [String: Any] = [
+                    "circleId": circleId,
+                    "userId": userId,
+                    "userName": userName,
+                    "rating": 1500,
+                    "role": role,
+                    "joinedAt": Timestamp()
+                ]
+
+                self.db.collection("circleMembers")
+                    .document(docId)
+                    .setData(data, merge: true) { error in
+                        if let error = error {
+                            completion(.failure(error))
+                            return
+                        }
+                        completion(.success(()))
+                    }
+            }
+    }
+
+    func fetchCurrentCircleMembers() {
+        guard let circleId = currentCircleId else {
+            DispatchQueue.main.async {
+                self.currentCircleMembers = []
+            }
+            return
+        }
+
+        db.collection("circleMembers")
+            .whereField("circleId", isEqualTo: circleId)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print(error.localizedDescription)
+                    return
+                }
+
+                let members: [CircleMembership] = snapshot?.documents.compactMap { doc in
+                    let data = doc.data()
+                    guard
+                        let circleId = data["circleId"] as? String,
+                        let userId = data["userId"] as? String,
+                        let userName = data["userName"] as? String,
+                        let rating = data["rating"] as? Int,
+                        let role = data["role"] as? String,
+                        let joinedAt = data["joinedAt"] as? Timestamp
+                    else {
+                        return nil
+                    }
+
+                    return CircleMembership(
+                        id: doc.documentID,
+                        circleId: circleId,
+                        userId: userId,
+                        userName: userName,
+                        rating: rating,
+                        role: role,
+                        joinedAt: joinedAt.dateValue()
+                    )
+                } ?? []
+
+                DispatchQueue.main.async {
+                    self.currentCircleMembers = members.sorted { $0.rating > $1.rating }
+                }
+            }
+    }
+
+    private func fetchJoinedCircles() {
+        guard let uid = currentUser?.uid else {
+            DispatchQueue.main.async {
+                self.joinedCircles = []
+            }
+            return
+        }
+
+        db.collection("circles")
+            .whereField("memberIds", arrayContains: uid)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print(error.localizedDescription)
+                    return
+                }
+
+                let circles: [Circle] = snapshot?.documents.compactMap { doc in
+                    let data = doc.data()
+                    guard
+                        let name = data["name"] as? String,
+                        let description = data["description"] as? String,
+                        let ownerId = data["ownerId"] as? String,
+                        let memberIds = data["memberIds"] as? [String],
+                        let circleCode = data["circleCode"] as? String,
+                        let createdAt = data["createdAt"] as? Timestamp
+                    else {
+                        return nil
+                    }
+
+                    let sportName =
+                        (data["sportName"] as? String) ?? "バドミントン"
+
+                    return Circle(
+                        id: doc.documentID,
+                        name: name,
+                        description: description,
+                        sportName: sportName,
+                        ownerId: ownerId,
+                        memberIds: memberIds,
+                        circleCode: circleCode,
+                        createdAt: createdAt
+                    )
+                } ?? []
+
+                DispatchQueue.main.async {
+                    self.joinedCircles = circles.sorted {
+                        $0.createdAt.dateValue() > $1.createdAt.dateValue()
+                    }
+
+                    if self.currentCircleId == nil {
+                        self.currentCircleId = self.joinedCircles.first?.id
+                    }
+                }
+            }
     }
 
     // MARK: ログイン状態
 
     var isLoggedIn: Bool {
 
-        Auth.auth().currentUser != nil
+        currentUser != nil
     }
 }

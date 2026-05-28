@@ -2,80 +2,26 @@ import SwiftUI
 
 struct ContentView: View {
 
-    @StateObject private var store = AppStore()
-
     @StateObject private var authManager =
         FirebaseAuthManager.shared
 
-    @State private var selectedTab = 0
-
     var body: some View {
 
-        if authManager.isLoggedIn {
+        Group {
 
-            TabView(selection: $selectedTab) {
+            // 未ログイン
 
-                TopView(store: store)
-                    .tabItem {
+            if !authManager.isLoggedIn {
 
-                        Label(
-                            "Rating",
-                            systemImage:
-                                "chart.line.uptrend.xyaxis"
-                        )
-                    }
-                    .tag(0)
-
-                MatchInputView(
-                    store: store,
-                    onRegistered: {
-
-                        selectedTab = 0
-                    }
-                )
-                .tabItem {
-
-                    Label(
-                        "試合結果",
-                        systemImage: "plus.circle"
-                    )
-                }
-                .tag(1)
-
-                MatchHistoryView(store: store)
-                    .tabItem {
-
-                        Label(
-                            "履歴",
-                            systemImage: "clock"
-                        )
-                    }
-                    .tag(2)
-
-                RankingView(store: store)
-                    .tabItem {
-
-                        Label(
-                            "ランキング",
-                            systemImage: "crown"
-                        )
-                    }
-                    .tag(3)
-
-                CircleSwitchView(store: store)
-                    .tabItem {
-
-                        Label(
-                            "サークル",
-                            systemImage: "person.3"
-                        )
-                    }
-                    .tag(4)
+                LoginView()
             }
 
-        } else {
+            // メイン
 
-            LoginView()
+            else {
+
+                MainTabView()
+            }
         }
     }
 }

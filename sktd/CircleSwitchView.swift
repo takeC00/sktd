@@ -5,79 +5,70 @@ struct CircleSwitchView: View {
 
     @ObservedObject var store: AppStore
 
+    @StateObject private var authManager =
+        FirebaseAuthManager.shared
+
+    @State private var showJoinSheet = false
+    @State private var showCreateSheet = false
+    @State private var showCircleSelectSheet = false
+
     @State private var inviteCode = ""
     @State private var copied = false
-
-    @State private var joinCode = ""
-    @State private var joinMessage = ""
 
     var body: some View {
         NavigationView {
             List {
                 Section(header: Text("現在のサークル")) {
-                    if let currentCircle = store.currentCircle {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(currentCircle.name)
-                                .font(.headline)
-
-                            Text("競技：\(currentCircle.sportName)")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-
-                            Text(currentCircle.id)
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                }
-
-                Section(header: Text("所属サークル")) {
-                    ForEach(joinedCircles) { circle in
-                        Button(action: {
-                            store.currentCircleId = circle.id
-                            inviteCode = ""
-                            copied = false
-                        }) {
+                    if let current = currentCircle {
+                        Button {
+                            showCircleSelectSheet = true
+                        } label: {
                             HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(circle.name)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(current.name)
+                                        .font(.headline)
                                         .foregroundColor(.primary)
 
-                                    Text("競技：\(circle.sportName)")
+                                    Text(current.description)
                                         .font(.caption)
                                         .foregroundColor(.gray)
 
-                                    Text(circle.id)
-                                        .font(.caption)
+                                    Text("ID: \(current.id)")
+                                        .font(.caption2)
                                         .foregroundColor(.gray)
                                 }
 
                                 Spacer()
 
-                                if store.currentCircleId == circle.id {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.blue)
-                                }
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.gray.opacity(0.7))
+                            }
+                        }
+                    } else {
+                        Button {
+                            showCircleSelectSheet = true
+                        } label: {
+                            HStack {
+                                Text("サークルを選択する")
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.gray.opacity(0.7))
                             }
                         }
                     }
                 }
 
                 Section(header: Text("招待コード")) {
-                    Button("招待コードを発行する") {
-                        inviteCode = generateInviteCode()
-                        copied = false
-                    }
-
-                    if !inviteCode.isEmpty {
+                    if let current = currentCircle {
                         HStack {
-                            Text(inviteCode)
+                            Text(current.circleCode)
                                 .font(.headline)
 
                             Spacer()
 
                             Button(copied ? "コピー済み" : "コピー") {
-                                UIPasteboard.general.string = inviteCode
+                                UIPasteboard.general.string = current.circleCode
                                 copied = true
                             }
                         }
@@ -85,90 +76,87 @@ struct CircleSwitchView: View {
                         Text("このコードを共有すると、同じサークルに参加できます。")
                             .font(.caption)
                             .foregroundColor(.gray)
-                    }
-                }
-
-                Section(header: Text("新しいサークルに参加")) {
-                    TextField("招待コードを入力", text: $joinCode)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled(true)
-
-                    Button("参加する") {
-                        joinCircle()
-                    }
-                    .disabled(joinCode.isEmpty)
-
-                    if !joinMessage.isEmpty {
-                        Text(joinMessage)
+                    } else {
+                        Text("サークルを選択すると招待コードが表示されます")
                             .font(.caption)
                             .foregroundColor(.gray)
                     }
                 }
+
+                Section {
+                    Button("サークルを作成") {
+                        showCreateSheet = true
+                    }
+                }
+
+                Section(header: Text("新しいサークルに参加")) {
+                    Button("招待コードで参加する") {
+                        showJoinSheet = true
+                    }
+                }
             }
             .navigationTitle("サークル")
-        }
-    }
-
-    var joinedCircles: [CircleGroup] {
-        store.circles.filter { circle in
-            store.circleMembers.contains {
-                $0.circleId == circle.id &&
-                $0.userId == store.currentUserId
+            .sheet(isPresented: $showJoinSheet) {
+                NavigationStack {
+                    CircleJoinView()
+                }
+            }
+            .sheet(isPresented: $showCreateSheet) {
+                NavigationStack {
+                    CircleCreateView()
+                }
+            }
+            .sheet(isPresented: $showCircleSelectSheet) {
+                NavigationStack {
+                    List {
+                        Section(header: Text("サークルを選択")) {
+                            ForEach(authManager.joinedCircles) { circle in
+                                Button {
+                                    authManager.setCurrentCircle(circleId: circle.id)
+                                    store.currentCircleId = circle.id
+                                    inviteCode = ""
+                                    copied = false
+                                    showCircleSelectSheet = false
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(circle.name)
+                                                .foregroundColor(.primary)
+                                            Text(circle.circleCode)
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                        Spacer()
+                                        if authManager.currentCircleId == circle.id {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundColor(.blue)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .navigationTitle("サークル切替")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("閉じる") {
+                                showCircleSelectSheet = false
+                            }
+                        }
+                    }
+                }
+            }
+            .onAppear {
+                authManager.refreshCircles()
             }
         }
     }
 
-    func generateInviteCode() -> String {
-        let characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-        let random = String((0..<6).map { _ in characters.randomElement()! })
-
-        return "\(store.currentCircleId)-\(random)"
-    }
-
-    func joinCircle() {
-        let normalizedCode = joinCode.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard let circleId = extractCircleId(from: normalizedCode) else {
-            joinMessage = "招待コードの形式が正しくありません。"
-            return
+    private var currentCircle: Circle? {
+        guard let id = authManager.currentCircleId else {
+            return nil
         }
-
-        guard store.circles.contains(where: { $0.id == circleId }) else {
-            joinMessage = "該当するサークルが見つかりません。"
-            return
-        }
-
-        let alreadyJoined = store.circleMembers.contains {
-            $0.userId == store.currentUserId &&
-            $0.circleId == circleId
-        }
-
-        if alreadyJoined {
-            joinMessage = "すでに参加済みのサークルです。"
-            return
-        }
-
-        store.circleMembers.append(
-            CircleMember(
-                userId: store.currentUserId,
-                circleId: circleId,
-                rating: 1500,
-                role: "member"
-            )
-        )
-
-        store.currentCircleId = circleId
-        joinCode = ""
-        joinMessage = "サークルに参加しました。"
-    }
-
-    func extractCircleId(from code: String) -> String? {
-        let parts = code.split(separator: "-")
-
-        if parts.count >= 2 {
-            return "\(parts[0])-\(parts[1])"
-        }
-
-        return nil
+        return authManager.joinedCircles.first { $0.id == id }
     }
 }

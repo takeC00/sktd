@@ -15,6 +15,17 @@ struct CircleMember: Identifiable {
     var role: String
 }
 
+// Firestore: circleMembers コレクション用
+struct CircleMembership: Identifiable {
+    let id: String
+    let circleId: String
+    let userId: String
+    let userName: String
+    var rating: Int
+    var role: String
+    let joinedAt: Date
+}
+
 struct CircleGroup: Identifiable {
     let id: String
     var name: String

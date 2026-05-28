@@ -292,17 +292,6 @@ struct LoginView: View {
                                         .font(.headline)
                                         .foregroundColor(.white)
                                     }
-
-                                    NavigationLink(
-                                        destination: CircleCreateView()
-                                    ) {
-
-                                        Text(
-                                            "サークルを作成する 〉"
-                                        )
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                    }
                                 }
                                 .padding(.top, 10)
                             }

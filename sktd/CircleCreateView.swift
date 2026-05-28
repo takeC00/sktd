@@ -2,55 +2,87 @@ import SwiftUI
 
 struct CircleCreateView: View {
 
-    @State private var circleName = ""
-    @State private var generatedCircleId = ""
-		@State private var sportName = ""
+    @Environment(\.dismiss)
+    private var dismiss
 
-		var isCreateEnabled: Bool {
-				!circleName.isEmpty && !sportName.isEmpty
-		}
+    @State private var name = ""
+    @State private var sportName: String = "バドミントン"
+
+    @State private var errorMessage = ""
+
+    @State private var isLoading = false
+
+		@StateObject private var authManager =
+				FirebaseAuthManager.shared
+
+    var canCreate: Bool {
+
+        !name.isEmpty
+        && !isLoading
+    }
 
     var body: some View {
         Form {
             Section(header: Text("サークル情報")) {
-                TextField("サークル名", text: $circleName)
-								TextField("競技名 例：バドミントン", text: $sportName)
+                TextField("サークル名", text: $name)
+
+                Picker("競技", selection: $sportName) {
+                    Text("バドミントン").tag("バドミントン")
+                    Text("卓球").tag("卓球")
+                    Text("テニス").tag("テニス")
+                }
+            }
+
+            if !errorMessage.isEmpty {
+                Section {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
             }
 
             Section {
-                Button("サークルIDを発行する") {
-                    generatedCircleId = generateCircleId()
-                }
-                .disabled(!isCreateEnabled)
-            }
+                Button {
+                    isLoading = true
+                    errorMessage = ""
 
-						if !generatedCircleId.isEmpty {
-								Section(header: Text("発行されたサークルID")) {
-										VStack(alignment: .leading, spacing: 12) {
-												HStack {
-														Text(generatedCircleId)
-																.font(.title2)
-																.bold()
-														Spacer()
-														Button(action: {
-																UIPasteboard.general.string = generatedCircleId
-														}) {
-																Label("コピー", systemImage: "doc.on.doc")
-														}
-												}
-												Text("このIDをメンバーに共有してください。")
-														.font(.caption)
-														.foregroundColor(.gray)
-										}
-								}
-						}
+                    authManager.createCircle(
+                        name: name,
+                        sportName: sportName
+                    ) { result in
+                        DispatchQueue.main.async {
+                            isLoading = false
+                            switch result {
+                            case .success:
+                                dismiss()
+                            case .failure(let error):
+                                errorMessage = error.localizedDescription
+                            }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if isLoading {
+                            ProgressView()
+                        } else {
+                            Text("サークルを作成")
+                                .fontWeight(.bold)
+                        }
+                        Spacer()
+                    }
+                }
+                .disabled(!canCreate)
+            }
         }
         .navigationTitle("サークル作成")
-    }
-
-    func generateCircleId() -> String {
-        let characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-        let random = String((0..<5).map { _ in characters.randomElement()! })
-        return "SKTD-\(random)"
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("閉じる") {
+                    dismiss()
+                }
+            }
+        }
     }
 }

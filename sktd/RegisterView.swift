@@ -18,9 +18,6 @@ struct RegisterView: View {
     @State private var email = ""
     @State private var password = ""
 
-    // 任意
-    @State private var circleId = ""
-
     @State private var showPassword = false
 
     @State private var errorMessage = ""
@@ -202,37 +199,6 @@ struct RegisterView: View {
                         )
                         .cornerRadius(18)
 
-                        // MARK: サークルID
-
-                        HStack(spacing: 12) {
-
-                            Image(systemName: "person.3")
-                                .foregroundColor(.black)
-
-                            TextField(
-                                "",
-                                text: $circleId,
-                                prompt:
-                                    Text("サークルID（任意）")
-                                    .foregroundColor(
-                                        Color(
-																						red: 0.38,
-																						green: 0.38,
-																						blue: 0.40
-																				)
-																				.opacity(0.72)
-                                    )
-                            )
-                            .foregroundColor(.black)
-                            .textInputAutocapitalization(.characters)
-                            .autocorrectionDisabled(true)
-                        }
-                        .padding()
-                        .background(
-                            Color.white.opacity(0.84)
-                        )
-                        .cornerRadius(18)
-
                         // MARK: エラー
 
                         if !errorMessage.isEmpty {
@@ -377,6 +343,13 @@ struct RegisterView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("閉じる") {
+                    dismiss()
+                }
+            }
+        }
     }
 
     // MARK: Firebase Error

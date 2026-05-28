@@ -5,6 +5,9 @@ struct MatchInputView: View {
     @ObservedObject var store: AppStore
     let onRegistered: () -> Void
 
+    @StateObject private var authManager =
+        FirebaseAuthManager.shared
+
     @State private var matchType: MatchType = .singles
 
     @State private var teamAPlayer1 = ""
@@ -21,7 +24,7 @@ struct MatchInputView: View {
     ]
 
     var playerOptions: [String] {
-        store.currentCirclePlayers.map { $0.name }
+        authManager.currentCircleMembers.map { $0.userName }
     }
 
     var canRegister: Bool {
