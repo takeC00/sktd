@@ -5,6 +5,9 @@ struct MainTabView: View {
     @StateObject private var store =
         AppStore()
 
+    @StateObject private var authManager =
+        FirebaseAuthManager.shared
+
     private enum Tab: Hashable {
         case home
         case matchInput
@@ -76,5 +79,12 @@ struct MainTabView: View {
                 .tag(Tab.circle)
         }
         .tint(.orange)
+        .onAppear {
+            authManager.refreshCircles()
+            store.loadMatches()
+        }
+        .onChange(of: authManager.currentCircleId) { _, _ in
+            store.loadMatches()
+        }
     }
 }

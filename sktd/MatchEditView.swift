@@ -6,6 +6,9 @@ struct MatchEditView: View {
 
     @ObservedObject var store: AppStore
 
+    @StateObject private var authManager =
+        FirebaseAuthManager.shared
+
     let originalMatch: MatchResult
 
     @State private var matchType: MatchType
@@ -58,7 +61,7 @@ struct MatchEditView: View {
     }
 
     var playerOptions: [String] {
-        store.currentCirclePlayers.map { $0.name }
+        authManager.currentCircleMembers.map { $0.userName }
     }
 
     var body: some View {
@@ -279,8 +282,10 @@ struct MatchEditView: View {
             ratingDiff: originalMatch.ratingDiff
         )
 
-        store.updateMatch(updated)
-
-        dismiss()
+        store.updateMatch(updated) { error in
+            if error == nil {
+                dismiss()
+            }
+        }
     }
 }

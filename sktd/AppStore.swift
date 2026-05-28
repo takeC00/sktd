@@ -1,97 +1,152 @@
 import SwiftUI
 import Combine
+import FirebaseAuth
 
 class AppStore: ObservableObject {
 
-    @Published var players: [Player] = samplePlayers
-    @Published var circles: [CircleGroup] = sampleCircleGroups
-    @Published var circleMembers: [CircleMember] = sampleCircleMembers
     @Published var matchResults: [MatchResult] = []
+    @Published var isLoadingMatches = false
+    @Published var lastErrorMessage: String?
 
-    @Published var currentUserId: String = "user_001"
-    @Published var currentUserName: String = "服部"
-    @Published var currentCircleId: String = "circle_001"
+    private let authManager = FirebaseAuthManager.shared
+    private let matchService = MatchFirestoreService.shared
 
-    var currentCircle: CircleGroup? {
-        circles.first { $0.id == currentCircleId }
+    var currentUserId: String {
+        authManager.currentUser?.uid ?? ""
     }
 
-    var currentCirclePlayers: [Player] {
-        let memberUserIds = circleMembers
-            .filter { $0.circleId == currentCircleId }
-            .map { $0.userId }
+    var currentUserName: String {
+        authManager.currentUserName
+    }
 
-        return players.filter {
-            memberUserIds.contains($0.id)
-        }
+    var currentCircleId: String {
+        authManager.currentCircleId ?? ""
     }
 
     func ratingInCurrentCircle(userId: String) -> Int {
-        circleMembers.first {
-            $0.userId == userId &&
-            $0.circleId == currentCircleId
-        }?.rating ?? 1500
+        authManager.currentCircleMembers
+            .first { $0.userId == userId }?
+            .rating ?? 1500
     }
 
-    func registerMatch(_ result: MatchResult) {
-        matchResults.insert(result, at: 0)
-        applyRating(result, rule: .normal)
-    }
-
-    private func applyRating(_ result: MatchResult, rule: RatingRule) {
-        for name in result.teamAPlayers {
-            updateRating(
-                playerName: name,
-                diff: result.winner == "A" ? result.ratingDiff : -result.ratingDiff,
-                rule: rule
-            )
-        }
-
-        for name in result.teamBPlayers {
-            updateRating(
-                playerName: name,
-                diff: result.winner == "B" ? result.ratingDiff : -result.ratingDiff,
-                rule: rule
-            )
-        }
-    }
-
-    private func updateRating(playerName: String, diff: Int, rule: RatingRule) {
-        guard let player = players.first(where: { $0.name == playerName }) else {
+    func loadMatches() {
+        guard let circleId = authManager.currentCircleId else {
+            DispatchQueue.main.async {
+                self.matchResults = []
+            }
             return
         }
 
-        guard let index = circleMembers.firstIndex(where: {
-            $0.userId == player.id &&
-            $0.circleId == currentCircleId
-        }) else {
+        isLoadingMatches = true
+
+        matchService.fetchMatches(circleId: circleId) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.isLoadingMatches = false
+
+                switch result {
+                case .success(let matches):
+                    self.matchResults = matches
+                    self.lastErrorMessage = nil
+                case .failure(let error):
+                    self.lastErrorMessage = error.localizedDescription
+                    print(error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    func registerMatch(
+        _ result: MatchResult,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        guard let circleId = authManager.currentCircleId else {
+            completion?(
+                NSError(
+                    domain: "",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "サークルが選択されていません"]
+                )
+            )
             return
         }
 
-        let currentRating = circleMembers[index].rating
-        var adjustedDiff = diff
+        let match = MatchResult(
+            id: result.id,
+            circleId: circleId,
+            date: result.date,
+            matchType: result.matchType,
+            teamAPlayers: result.teamAPlayers,
+            teamBPlayers: result.teamBPlayers,
+            setScores: result.setScores,
+            winner: result.winner,
+            ratingDiff: result.ratingDiff
+        )
 
-        if diff < 0 {
-            let multiplier = lossProtectionMultiplier(
-                rating: currentRating,
-                rule: rule
+        let memberRatings = ratingsAfterApplying(match: match, sign: 1)
+
+        matchService.register(match: match, memberRatings: memberRatings) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+
+                switch result {
+                case .success(let saved):
+                    self.matchResults.insert(saved, at: 0)
+                    self.authManager.fetchCurrentCircleMembers()
+                    completion?(nil)
+                case .failure(let error):
+                    self.lastErrorMessage = error.localizedDescription
+                    completion?(error)
+                }
+            }
+        }
+    }
+
+    func updateMatch(
+        _ updated: MatchResult,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        guard
+            let oldMatch = matchResults.first(where: { $0.id == updated.id })
+        else {
+            completion?(
+                NSError(
+                    domain: "",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "試合が見つかりません"]
+                )
             )
-
-            adjustedDiff = Int(Double(diff) * multiplier)
+            return
         }
 
-        let newRating = currentRating + adjustedDiff
+        var ratings = currentMemberRatings()
+        applyMatchImpact(&ratings, match: oldMatch, sign: -1)
+        applyMatchImpact(&ratings, match: updated, sign: 1)
 
-        circleMembers[index].rating = max(newRating, rule.minimumRating)
+        matchService.update(match: updated, memberRatings: ratings) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+
+                switch result {
+                case .success:
+                    if let index = self.matchResults.firstIndex(where: { $0.id == updated.id }) {
+                        self.matchResults[index] = updated
+                    }
+                    self.authManager.fetchCurrentCircleMembers()
+                    completion?(nil)
+                case .failure(let error):
+                    self.lastErrorMessage = error.localizedDescription
+                    completion?(error)
+                }
+            }
+        }
     }
 
     func averageRating(for playerNames: [String]) -> Int {
         let ratings = playerNames.compactMap { name -> Int? in
-            guard let player = players.first(where: { $0.name == name }) else {
-                return nil
-            }
-
-            return ratingInCurrentCircle(userId: player.id)
+            authManager.currentCircleMembers
+                .first { $0.userName == name }?
+                .rating
         }
 
         if ratings.isEmpty {
@@ -149,47 +204,75 @@ class AppStore: ObservableObject {
         }
     }
 
-		func revertRating(_ result: MatchResult) {
+    // MARK: - Rating helpers
 
-				for name in result.teamAPlayers {
+    private func currentMemberRatings() -> [String: Int] {
+        Dictionary(
+            uniqueKeysWithValues: authManager.currentCircleMembers.map {
+                ($0.id, $0.rating)
+            }
+        )
+    }
 
-						updateRating(
-								playerName: name,
-								diff: result.winner == "A"
-										? -result.ratingDiff
-										: result.ratingDiff,
-								rule: .normal
-						)
-				}
+    private func ratingsAfterApplying(
+        match: MatchResult,
+        sign: Int
+    ) -> [String: Int] {
+        var ratings = currentMemberRatings()
+        applyMatchImpact(&ratings, match: match, sign: sign)
+        return ratings
+    }
 
-				for name in result.teamBPlayers {
+    private func applyMatchImpact(
+        _ ratings: inout [String: Int],
+        match: MatchResult,
+        sign: Int,
+        rule: RatingRule = .normal
+    ) {
+        let members = authManager.currentCircleMembers
+        let allPlayers = match.teamAPlayers + match.teamBPlayers
 
-						updateRating(
-								playerName: name,
-								diff: result.winner == "B"
-										? -result.ratingDiff
-										: result.ratingDiff,
-								rule: .normal
-						)
-				}
-		}
-		func updateMatch(_ updated: MatchResult) {
+        for name in allPlayers {
+            guard
+                let member = members.first(where: { $0.userName == name }),
+                let rawDiff = playerRatingDelta(match: match, playerName: name)
+            else {
+                continue
+            }
 
-				guard let index = matchResults.firstIndex(where: {
-						$0.id == updated.id
-				}) else {
-						return
-				}
+            let diff = rawDiff * sign
+            let current = ratings[member.id] ?? member.rating
+            var adjustedDiff = diff
 
-				let oldMatch = matchResults[index]
+            if diff < 0 {
+                adjustedDiff = Int(
+                    Double(diff) * lossProtectionMultiplier(
+                        rating: current,
+                        rule: rule
+                    )
+                )
+            }
 
-				// 元レート巻き戻し
-				revertRating(oldMatch)
+            ratings[member.id] = max(current + adjustedDiff, rule.minimumRating)
+        }
+    }
 
-				// 試合更新
-				matchResults[index] = updated
+    private func playerRatingDelta(
+        match: MatchResult,
+        playerName: String
+    ) -> Int? {
+        if match.teamAPlayers.contains(playerName) {
+            return match.winner == "A"
+                ? match.ratingDiff
+                : -match.ratingDiff
+        }
 
-				// 再計算
-				applyRating(updated, rule: .normal)
-		}
+        if match.teamBPlayers.contains(playerName) {
+            return match.winner == "B"
+                ? match.ratingDiff
+                : -match.ratingDiff
+        }
+
+        return nil
+    }
 }

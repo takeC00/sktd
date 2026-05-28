@@ -303,6 +303,7 @@ struct MatchInputView: View {
         )
 
         let result = MatchResult(
+            id: "",
             circleId: store.currentCircleId,
             date: Date(),
             matchType: matchType,
@@ -313,9 +314,12 @@ struct MatchInputView: View {
             ratingDiff: abs(ratingDiff)
         )
 
-        store.registerMatch(result)
-        resetForm()
-        onRegistered()
+        store.registerMatch(result) { error in
+            if error == nil {
+                resetForm()
+                onRegistered()
+            }
+        }
     }
 
     func resetForm() {

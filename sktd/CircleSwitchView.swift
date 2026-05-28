@@ -112,8 +112,9 @@ struct CircleSwitchView: View {
                         Section(header: Text("サークルを選択")) {
                             ForEach(authManager.joinedCircles) { circle in
                                 Button {
-                                    authManager.setCurrentCircle(circleId: circle.id)
-                                    store.currentCircleId = circle.id
+                                    authManager.setCurrentCircle(circleId: circle.id) { _ in
+                                        store.loadMatches()
+                                    }
                                     inviteCode = ""
                                     copied = false
                                     showCircleSelectSheet = false

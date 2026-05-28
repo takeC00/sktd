@@ -67,6 +67,9 @@ struct MatchHistoryView: View {
             .navigationTitle("試合履歴")
             .navigationBarTitleDisplayMode(.large)
 						.foregroundColor(.white)
+            .onAppear {
+                store.loadMatches()
+            }
 
             .sheet(item: $editingMatch) { match in
 

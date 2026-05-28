@@ -21,6 +21,8 @@ final class FirebaseAuthManager:
     // 選択中サークルの所属メンバー（中間テーブル）
     @Published var currentCircleMembers: [CircleMembership] = []
 
+    @Published var currentUserName: String = ""
+
     private let db =
         Firestore.firestore()
 
@@ -88,8 +90,10 @@ final class FirebaseAuthManager:
 
                         self.currentUser =
                             user
+                        self.currentUserName = name
                     }
 
+                    self.refreshCircles()
                     completion(.success(()))
                 }
         }
@@ -140,6 +144,8 @@ final class FirebaseAuthManager:
                 self.currentUser = nil
                 self.currentCircleId = nil
                 self.joinedCircles = []
+                self.currentCircleMembers = []
+                self.currentUserName = ""
             }
 
         } catch {
@@ -403,8 +409,12 @@ final class FirebaseAuthManager:
 										data["currentCircleId"]
 										as? String
 
+                                let name =
+                                    (data["name"] as? String) ?? ""
+
 								DispatchQueue.main.async {
                                     self.currentCircleId = currentCircleId
+                                    self.currentUserName = name
 								}
                                 self.fetchCurrentCircleMembers()
 						}
@@ -567,27 +577,34 @@ extension FirebaseAuthManager {
     /// - Note: Firebase Auth のアカウント自体は削除しません。
     func devDeleteAllData(completion: @escaping (Result<Void, Error>) -> Void) {
         // 依存順に消す（参照が残っても困らない順）
-        devDeleteCollection(named: "circleMembers") { result in
+        devDeleteCollection(named: "matches") { result in
             switch result {
             case .failure(let error):
                 completion(.failure(error))
             case .success:
-                self.devDeleteCollection(named: "circles") { result in
+                self.devDeleteCollection(named: "circleMembers") { result in
                     switch result {
                     case .failure(let error):
                         completion(.failure(error))
                     case .success:
-                        self.devDeleteCollection(named: "users") { result in
+                        self.devDeleteCollection(named: "circles") { result in
                             switch result {
                             case .failure(let error):
                                 completion(.failure(error))
                             case .success:
-                                DispatchQueue.main.async {
-                                    self.currentCircleId = nil
-                                    self.joinedCircles = []
-                                    self.currentCircleMembers = []
+                                self.devDeleteCollection(named: "users") { result in
+                                    switch result {
+                                    case .failure(let error):
+                                        completion(.failure(error))
+                                    case .success:
+                                        DispatchQueue.main.async {
+                                            self.currentCircleId = nil
+                                            self.joinedCircles = []
+                                            self.currentCircleMembers = []
+                                        }
+                                        completion(.success(()))
+                                    }
                                 }
-                                completion(.success(()))
                             }
                         }
                     }

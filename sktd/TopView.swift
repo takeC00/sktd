@@ -212,6 +212,11 @@ struct TopView: View {
                 }
             }
 
+            .onAppear {
+                authManager.refreshCircles()
+                store.loadMatches()
+            }
+
             .alert(
                 "ログアウトしますか？",
                 isPresented: $showLogoutAlert
