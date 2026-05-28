@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import FirebaseAuth
+import FirebaseFirestore
 
 class AppStore: ObservableObject {
 
@@ -10,6 +11,8 @@ class AppStore: ObservableObject {
 
     private let authManager = FirebaseAuthManager.shared
     private let matchService = MatchFirestoreService.shared
+    private var matchesListener: ListenerRegistration?
+    private var listeningCircleId: String?
 
     var currentUserId: String {
         authManager.currentUser?.uid ?? ""
@@ -26,24 +29,26 @@ class AppStore: ObservableObject {
     func ratingInCurrentCircle(userId: String) -> Int {
         authManager.currentCircleMembers
             .first { $0.userId == userId }?
-            .rating ?? 1500
+            .rating ?? RatingDefaults.initialRating
     }
 
-    func loadMatches() {
+    func startListeningMatches() {
         guard let circleId = authManager.currentCircleId else {
-            DispatchQueue.main.async {
-                self.matchResults = []
-            }
             return
         }
 
+        if listeningCircleId == circleId, matchesListener != nil {
+            return
+        }
+
+        matchesListener?.remove()
+        listeningCircleId = circleId
         isLoadingMatches = true
 
-        matchService.fetchMatches(circleId: circleId) { [weak self] result in
+        matchesListener = matchService.listenMatches(circleId: circleId) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.isLoadingMatches = false
-
                 switch result {
                 case .success(let matches):
                     self.matchResults = matches
@@ -54,6 +59,12 @@ class AppStore: ObservableObject {
                 }
             }
         }
+    }
+
+    func stopListeningMatches() {
+        matchesListener?.remove()
+        matchesListener = nil
+        listeningCircleId = nil
     }
 
     func registerMatch(
@@ -143,14 +154,14 @@ class AppStore: ObservableObject {
     }
 
     func averageRating(for playerNames: [String]) -> Int {
-        let ratings = playerNames.compactMap { name -> Int? in
+        let ratings = playerNames.compactMap { userId -> Int? in
             authManager.currentCircleMembers
-                .first { $0.userName == name }?
+                .first { $0.userId == userId }?
                 .rating
         }
 
         if ratings.isEmpty {
-            return 1500
+            return RatingDefaults.initialRating
         }
 
         return ratings.reduce(0, +) / ratings.count
@@ -232,10 +243,10 @@ class AppStore: ObservableObject {
         let members = authManager.currentCircleMembers
         let allPlayers = match.teamAPlayers + match.teamBPlayers
 
-        for name in allPlayers {
+        for userId in allPlayers {
             guard
-                let member = members.first(where: { $0.userName == name }),
-                let rawDiff = playerRatingDelta(match: match, playerName: name)
+                let member = members.first(where: { $0.userId == userId }),
+                let rawDiff = playerRatingDelta(match: match, playerId: userId)
             else {
                 continue
             }
@@ -259,20 +270,24 @@ class AppStore: ObservableObject {
 
     private func playerRatingDelta(
         match: MatchResult,
-        playerName: String
+        playerId: String
     ) -> Int? {
-        if match.teamAPlayers.contains(playerName) {
+        if match.teamAPlayers.contains(playerId) {
             return match.winner == "A"
                 ? match.ratingDiff
                 : -match.ratingDiff
         }
 
-        if match.teamBPlayers.contains(playerName) {
+        if match.teamBPlayers.contains(playerId) {
             return match.winner == "B"
                 ? match.ratingDiff
                 : -match.ratingDiff
         }
 
         return nil
+    }
+
+    func memberName(for userId: String) -> String {
+        authManager.currentCircleMembers.first(where: { $0.userId == userId })?.userName ?? ""
     }
 }

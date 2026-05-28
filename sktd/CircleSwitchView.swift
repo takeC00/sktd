@@ -16,9 +16,9 @@ struct CircleSwitchView: View {
     @State private var copied = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
-                Section(header: Text("現在のサークル")) {
+                Section(header: Text("現在のサークル").foregroundColor(.gray)) {
                     if let current = currentCircle {
                         Button {
                             showCircleSelectSheet = true
@@ -27,7 +27,7 @@ struct CircleSwitchView: View {
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text(current.name)
                                         .font(.headline)
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.white)
 
                                     Text(current.description)
                                         .font(.caption)
@@ -50,7 +50,7 @@ struct CircleSwitchView: View {
                         } label: {
                             HStack {
                                 Text("サークルを選択する")
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(.white)
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .foregroundColor(.gray.opacity(0.7))
@@ -58,12 +58,14 @@ struct CircleSwitchView: View {
                         }
                     }
                 }
+                .listRowBackground(Color.white.opacity(0.06))
 
-                Section(header: Text("招待コード")) {
+                Section(header: Text("招待コード").foregroundColor(.gray)) {
                     if let current = currentCircle {
                         HStack {
                             Text(current.circleCode)
                                 .font(.headline)
+                                .foregroundColor(.white)
 
                             Spacer()
 
@@ -82,20 +84,29 @@ struct CircleSwitchView: View {
                             .foregroundColor(.gray)
                     }
                 }
+                .listRowBackground(Color.white.opacity(0.06))
 
                 Section {
                     Button("サークルを作成") {
                         showCreateSheet = true
                     }
                 }
+                .listRowBackground(Color.white.opacity(0.06))
 
-                Section(header: Text("新しいサークルに参加")) {
+                Section(header: Text("新しいサークルに参加").foregroundColor(.gray)) {
                     Button("招待コードで参加する") {
                         showJoinSheet = true
                     }
                 }
+                .listRowBackground(Color.white.opacity(0.06))
             }
             .navigationTitle("サークル")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .scrollContentBackground(.hidden)
+            .background(Color.black.ignoresSafeArea())
             .sheet(isPresented: $showJoinSheet) {
                 NavigationStack {
                     CircleJoinView()
@@ -109,36 +120,34 @@ struct CircleSwitchView: View {
             .sheet(isPresented: $showCircleSelectSheet) {
                 NavigationStack {
                     List {
-                        Section(header: Text("サークルを選択")) {
+                        Section(header: Text("サークルを選択").foregroundColor(.gray)) {
                             ForEach(authManager.joinedCircles) { circle in
+                                let isCurrent = authManager.currentCircleId == circle.id
                                 Button {
                                     authManager.setCurrentCircle(circleId: circle.id) { _ in
-                                        store.loadMatches()
+                                        store.startListeningMatches()
                                     }
                                     inviteCode = ""
                                     copied = false
                                     showCircleSelectSheet = false
                                 } label: {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(circle.name)
-                                                .foregroundColor(.primary)
-                                            Text(circle.circleCode)
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                        }
-                                        Spacer()
-                                        if authManager.currentCircleId == circle.id {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .foregroundColor(.blue)
-                                        }
-                                    }
+                                    CircleSelectRow(
+                                        name: circle.name,
+                                        code: circle.circleCode,
+                                        isCurrent: isCurrent
+                                    )
                                 }
+                                .listRowBackground(Color.white.opacity(0.06))
                             }
                         }
                     }
                     .navigationTitle("サークル切替")
                     .navigationBarTitleDisplayMode(.inline)
+                    .toolbarBackground(.black, for: .navigationBar)
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbarColorScheme(.dark, for: .navigationBar)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.black.ignoresSafeArea())
                     .toolbar {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button("閉じる") {
@@ -159,5 +168,31 @@ struct CircleSwitchView: View {
             return nil
         }
         return authManager.joinedCircles.first { $0.id == id }
+    }
+}
+
+private struct CircleSelectRow: View {
+    let name: String
+    let code: String
+    let isCurrent: Bool
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name)
+                    .foregroundColor(.white)
+
+                Text(code)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+
+            Spacer()
+
+            if isCurrent {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.blue)
+            }
+        }
     }
 }

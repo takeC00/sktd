@@ -81,10 +81,10 @@ struct MainTabView: View {
         .tint(.orange)
         .onAppear {
             authManager.refreshCircles()
-            store.loadMatches()
+            store.startListeningMatches()
         }
         .onChange(of: authManager.currentCircleId) { _, _ in
-            store.loadMatches()
+            store.startListeningMatches()
         }
     }
 }

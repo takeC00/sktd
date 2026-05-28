@@ -61,7 +61,12 @@ struct MatchEditView: View {
     }
 
     var playerOptions: [String] {
-        authManager.currentCircleMembers.map { $0.userName }
+        authManager.currentCircleMembers.map { $0.userId }
+    }
+
+    func displayName(for userId: String) -> String {
+        authManager.currentCircleMembers.first(where: { $0.userId == userId })?.userName
+        ?? userId
     }
 
     var body: some View {
@@ -99,14 +104,17 @@ struct MatchEditView: View {
                         "1人目",
                         selection: $teamAPlayer1
                     ) {
+                        Text("選択してください").tag("")
 
                         ForEach(
                             playerOptions,
                             id: \.self
                         ) {
-                            Text($0)
+                            Text(displayName(for: $0))
+                                .tag($0)
                         }
                     }
+                    .pickerStyle(.menu)
 
                     if matchType == .doubles {
 
@@ -114,14 +122,17 @@ struct MatchEditView: View {
                             "2人目",
                             selection: $teamAPlayer2
                         ) {
+                            Text("選択してください").tag("")
 
                             ForEach(
                                 playerOptions,
                                 id: \.self
                             ) {
-                                Text($0)
+                                Text(displayName(for: $0))
+                                    .tag($0)
                             }
                         }
+                        .pickerStyle(.menu)
                     }
                 }
 
@@ -133,14 +144,17 @@ struct MatchEditView: View {
                         "1人目",
                         selection: $teamBPlayer1
                     ) {
+                        Text("選択してください").tag("")
 
                         ForEach(
                             playerOptions,
                             id: \.self
                         ) {
-                            Text($0)
+                            Text(displayName(for: $0))
+                                .tag($0)
                         }
                     }
+                    .pickerStyle(.menu)
 
                     if matchType == .doubles {
 
@@ -148,14 +162,17 @@ struct MatchEditView: View {
                             "2人目",
                             selection: $teamBPlayer2
                         ) {
+                            Text("選択してください").tag("")
 
                             ForEach(
                                 playerOptions,
                                 id: \.self
                             ) {
-                                Text($0)
+                                Text(displayName(for: $0))
+                                    .tag($0)
                             }
                         }
+                        .pickerStyle(.menu)
                     }
                 }
 

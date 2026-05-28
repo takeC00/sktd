@@ -3,6 +3,7 @@ import SwiftUI
 struct MatchHistoryRowView: View {
 
     let history: MatchResult
+    let store: AppStore
     let currentUserName: String
     let showOnlyOpponent: Bool
 
@@ -24,7 +25,7 @@ struct MatchHistoryRowView: View {
                     HStack(spacing: 4) {
 
                         Text(
-                            history.teamAPlayers.joined(separator: "・")
+                            history.teamAPlayers.map { store.memberName(for: $0) }.joined(separator: "・")
                         )
 
                         if history.winner == "A" {
@@ -46,7 +47,7 @@ struct MatchHistoryRowView: View {
                     HStack(spacing: 4) {
 
                         Text(
-                            history.teamBPlayers.joined(separator: "・")
+                            history.teamBPlayers.map { store.memberName(for: $0) }.joined(separator: "・")
                         )
 
                         if history.winner == "B" {

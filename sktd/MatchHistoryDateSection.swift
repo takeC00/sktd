@@ -40,6 +40,7 @@ struct MatchHistoryDateSection: View {
 
                         MatchHistoryRowView(
                             history: history,
+                            store: store,
                             currentUserName: currentUserName,
                             showOnlyOpponent: false
                         )

@@ -65,11 +65,11 @@ final class FirebaseAuthManager:
                 .document(user.uid)
                 .setData([
 
+                    "userId": user.uid,
+
                     "name": name,
 
                     "email": email,
-
-                    "rating": 1500,
 
                     "currentCircleId": NSNull(),
 
@@ -153,6 +153,158 @@ final class FirebaseAuthManager:
             print(
                 error.localizedDescription
             )
+        }
+    }
+
+    // MARK: アカウント削除（自分）
+
+    /// 自分のFirebase Authアカウント削除 + Firestoreの関連データ掃除（Functionsなし運用）
+    /// - Note: 多くの場合 `reauthenticate` が必須です（パスワードユーザーは password を渡す）。
+    func deleteMyAccount(
+        password: String?,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        guard let user = Auth.auth().currentUser else {
+            completion(
+                .failure(
+                    NSError(
+                        domain: "",
+                        code: -1,
+                        userInfo: [NSLocalizedDescriptionKey: "ログイン情報が取得できません"]
+                    )
+                )
+            )
+            return
+        }
+
+        let uid = user.uid
+
+        func reauthenticateIfNeeded(then next: @escaping () -> Void) {
+            // Email/Password のみここで再認証対応（他providerは未対応）
+            let providers = user.providerData.map { $0.providerID }
+            let isPasswordProvider = providers.contains("password")
+
+            guard isPasswordProvider else {
+                next()
+                return
+            }
+
+            guard
+                let email = user.email,
+                let password,
+                !password.isEmpty
+            else {
+                completion(
+                    .failure(
+                        NSError(
+                            domain: "",
+                            code: -2,
+                            userInfo: [NSLocalizedDescriptionKey: "再認証のためパスワードが必要です"]
+                        )
+                    )
+                )
+                return
+            }
+
+            let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+            user.reauthenticate(with: credential) { _, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                next()
+            }
+        }
+
+        func cleanupFirestore(completion cleanupDone: @escaping (Result<Void, Error>) -> Void) {
+            let group = DispatchGroup()
+            var firstError: Error?
+
+            // users/{uid}
+            group.enter()
+            db.collection("users")
+                .document(uid)
+                .delete { error in
+                    if let error = error, firstError == nil {
+                        firstError = error
+                    }
+                    group.leave()
+                }
+
+            // circleMembers where userId == uid
+            group.enter()
+            db.collection("circleMembers")
+                .whereField("userId", isEqualTo: uid)
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        if firstError == nil { firstError = error }
+                        group.leave()
+                        return
+                    }
+
+                    let batch = self.db.batch()
+                    snapshot?.documents.forEach { doc in
+                        batch.deleteDocument(doc.reference)
+                    }
+                    batch.commit { error in
+                        if let error = error, firstError == nil {
+                            firstError = error
+                        }
+                        group.leave()
+                    }
+                }
+
+            // circles.memberIds から uid を削除
+            group.enter()
+            db.collection("circles")
+                .whereField("memberIds", arrayContains: uid)
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        if firstError == nil { firstError = error }
+                        group.leave()
+                        return
+                    }
+
+                    let batch = self.db.batch()
+                    snapshot?.documents.forEach { doc in
+                        batch.updateData(
+                            ["memberIds": FieldValue.arrayRemove([uid])],
+                            forDocument: doc.reference
+                        )
+                    }
+                    batch.commit { error in
+                        if let error = error, firstError == nil {
+                            firstError = error
+                        }
+                        group.leave()
+                    }
+                }
+
+            group.notify(queue: .main) {
+                if let firstError {
+                    cleanupDone(.failure(firstError))
+                } else {
+                    cleanupDone(.success(()))
+                }
+            }
+        }
+
+        reauthenticateIfNeeded {
+            cleanupFirestore { cleanupResult in
+                switch cleanupResult {
+                case .failure(let error):
+                    completion(.failure(error))
+                case .success:
+                    user.delete { error in
+                        if let error = error {
+                            completion(.failure(error))
+                            return
+                        }
+                        self.logout()
+                        completion(.success(()))
+                    }
+                }
+            }
         }
     }
 
@@ -444,7 +596,7 @@ final class FirebaseAuthManager:
                     "circleId": circleId,
                     "userId": userId,
                     "userName": userName,
-                    "rating": 1500,
+                    "rating": RatingDefaults.initialRating,
                     "role": role,
                     "joinedAt": Timestamp()
                 ]

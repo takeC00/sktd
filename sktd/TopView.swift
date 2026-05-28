@@ -8,19 +8,17 @@ struct TopView: View {
         FirebaseAuthManager.shared
 
     @State private var showLogoutAlert = false
+    @State private var showDeleteAccountSheet = false
 
     var myRating: Int {
-
-        store.ratingInCurrentCircle(
-            userId: store.currentUserId
-        )
+        authManager.currentCircleMembers
+            .first(where: { $0.userId == store.currentUserId })?
+            .rating
+        ?? RatingDefaults.initialRating
     }
 
     var currentCircleMatches: [MatchResult] {
-
-        store.matchResults.filter {
-            $0.circleId == store.currentCircleId
-        }
+        store.matchResults
     }
 
     var ratingHistories: [Int] {
@@ -29,13 +27,9 @@ struct TopView: View {
             currentCircleMatches
                 .filter {
 
-                    $0.teamAPlayers.contains(
-                        store.currentUserName
-                    )
+                    $0.teamAPlayers.contains(store.currentUserId)
                     ||
-                    $0.teamBPlayers.contains(
-                        store.currentUserName
-                    )
+                    $0.teamBPlayers.contains(store.currentUserId)
                 }
                 .prefix(20)
         )
@@ -43,18 +37,14 @@ struct TopView: View {
         let signedDiffs = targetMatches.map {
             match -> Int in
 
-            if match.teamAPlayers.contains(
-                store.currentUserName
-            ) {
+            if match.teamAPlayers.contains(store.currentUserId) {
 
                 return match.winner == "A"
                     ? match.ratingDiff
                     : -match.ratingDiff
             }
 
-            if match.teamBPlayers.contains(
-                store.currentUserName
-            ) {
+            if match.teamBPlayers.contains(store.currentUserId) {
 
                 return match.winner == "B"
                     ? match.ratingDiff
@@ -87,13 +77,9 @@ struct TopView: View {
             currentCircleMatches
                 .filter {
 
-                    $0.teamAPlayers.contains(
-                        store.currentUserName
-                    )
+                    $0.teamAPlayers.contains(store.currentUserId)
                     ||
-                    $0.teamBPlayers.contains(
-                        store.currentUserName
-                    )
+                    $0.teamBPlayers.contains(store.currentUserId)
                 }
                 .prefix(3)
         )
@@ -109,10 +95,6 @@ struct TopView: View {
                     alignment: .leading,
                     spacing: 24
                 ) {
-                    Text("Rating")
-                        .font(.largeTitle.bold())
-                        .foregroundColor(.white)
-
                     // MARK: レーティング
 
                     VStack(
@@ -187,7 +169,11 @@ struct TopView: View {
                 Color.black.ignoresSafeArea()
             )
 
+            .navigationTitle("Rating")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
 
             // MARK: ログアウト
 
@@ -197,24 +183,28 @@ struct TopView: View {
                     placement: .topBarTrailing
                 ) {
 
-                    Button {
+                    Menu {
+                        Button(role: .destructive) {
+                            showLogoutAlert = true
+                        } label: {
+                            Label("ログアウト", systemImage: "rectangle.portrait.and.arrow.right")
+                        }
 
-                        showLogoutAlert = true
-
+                        Button(role: .destructive) {
+                            showDeleteAccountSheet = true
+                        } label: {
+                            Label("アカウント削除", systemImage: "trash")
+                        }
                     } label: {
-
-                        Image(
-                            systemName:
-                                "rectangle.portrait.and.arrow.right"
-                        )
-                        .foregroundColor(.red)
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundColor(.white)
                     }
                 }
             }
 
             .onAppear {
                 authManager.refreshCircles()
-                store.loadMatches()
+                store.startListeningMatches()
             }
 
             .alert(
@@ -242,6 +232,9 @@ struct TopView: View {
                     "現在のアカウントからログアウトします。"
                 )
             }
+            .sheet(isPresented: $showDeleteAccountSheet) {
+                DeleteAccountView()
+            }
         }
     }
 }
@@ -252,6 +245,7 @@ struct RecentMatchCard: View {
 
     let match: MatchResult
 
+    let store: AppStore
     let currentUserName: String
 
     var isWin: Bool {
@@ -323,7 +317,7 @@ struct RecentMatchCard: View {
                 HStack {
 
                     Text(
-                        match.teamAPlayers.joined(
+                        match.teamAPlayers.map { store.memberName(for: $0) }.joined(
                             separator: " / "
                         )
                     )
@@ -344,7 +338,7 @@ struct RecentMatchCard: View {
                 HStack {
 
                     Text(
-                        match.teamBPlayers.joined(
+                        match.teamBPlayers.map { store.memberName(for: $0) }.joined(
                             separator: " / "
                         )
                     )

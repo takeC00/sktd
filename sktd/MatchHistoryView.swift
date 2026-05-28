@@ -4,19 +4,8 @@ struct MatchHistoryView: View {
 
     @ObservedObject var store: AppStore
 
-    @State private var editingMatch: MatchResult?
-
-    // MARK: 現在のサークル履歴
-
     var currentCircleHistories: [MatchResult] {
-
-        store.matchResults
-            .filter {
-                $0.circleId == store.currentCircleId
-            }
-            .sorted {
-                $0.date > $1.date
-            }
+        store.matchResults.sorted { $0.date > $1.date }
     }
 
     // MARK: 日付ごと
@@ -52,7 +41,7 @@ struct MatchHistoryView: View {
                             store: store,
                             date: date,
                             histories: groupedHistories[date] ?? [],
-                            currentUserName: store.currentUserName
+                            currentUserName: store.currentUserId
                         )
                     }
                 }
@@ -65,31 +54,13 @@ struct MatchHistoryView: View {
             )
 
             .navigationTitle("試合履歴")
-            .navigationBarTitleDisplayMode(.large)
-						.foregroundColor(.white)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .onAppear {
-                store.loadMatches()
-            }
-
-            .sheet(item: $editingMatch) { match in
-
-                MatchEditView(
-                    store: store,
-                    originalMatch: match
-                )
+                store.startListeningMatches()
             }
         }
-    }
-
-    // MARK: 日付変換
-
-    func formatOnlyDate(_ date: Date) -> String {
-
-        let formatter = DateFormatter()
-
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "yyyy/MM/dd"
-
-        return formatter.string(from: date)
     }
 }

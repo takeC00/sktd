@@ -9,6 +9,26 @@ final class MatchFirestoreService {
 
     private init() {}
 
+    func listenMatches(
+        circleId: String,
+        onChange: @escaping (Result<[MatchResult], Error>) -> Void
+    ) -> ListenerRegistration {
+        db.collection("matches")
+            .whereField("circleId", isEqualTo: circleId)
+            .order(by: "date", descending: true)
+            .addSnapshotListener { snapshot, error in
+                if let error = error {
+                    onChange(.failure(error))
+                    return
+                }
+
+                let matches = snapshot?.documents.compactMap {
+                    Self.match(from: $0)
+                } ?? []
+                onChange(.success(matches))
+            }
+    }
+
     func fetchMatches(
         circleId: String,
         completion: @escaping (Result<[MatchResult], Error>) -> Void

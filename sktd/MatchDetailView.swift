@@ -34,7 +34,7 @@ struct MatchDetailView: View {
                         HStack(spacing: 4) {
 
                             Text(
-                                match.teamAPlayers.joined(separator: "・")
+                                match.teamAPlayers.map { store.memberName(for: $0) }.joined(separator: "・")
                             )
 
                             if match.winner == "A" {
@@ -52,7 +52,7 @@ struct MatchDetailView: View {
                         HStack(spacing: 4) {
 
                             Text(
-                                match.teamBPlayers.joined(separator: "・")
+                                match.teamBPlayers.map { store.memberName(for: $0) }.joined(separator: "・")
                             )
 
                             if match.winner == "B" {
@@ -90,6 +90,7 @@ struct MatchDetailView: View {
                             HStack {
 
                                 Text("セット\(index + 1)")
+                                    .foregroundColor(.white)
 
                                 Spacer()
 
@@ -98,14 +99,6 @@ struct MatchDetailView: View {
 																		HStack(spacing: 2) {
 
 																				Text(score.teamAScore)
-
-																				if
-																						let a = Int(score.teamAScore),
-																						let b = Int(score.teamBScore),
-																						a > b {
-
-																						Text("👑")
-																				}
 																		}
 
 																		Text("-")
@@ -174,7 +167,10 @@ struct MatchDetailView: View {
             Color.black.ignoresSafeArea()
         )
         .navigationTitle("試合詳細")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.black, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
 
         // MARK: 編集画面
 

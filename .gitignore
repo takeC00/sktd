@@ -12,8 +12,6 @@ firebase-debug.log
 firestore-debug.log
 
 # Cloud Functions (Node)
-functions/node_modules/
-functions/.runtimeconfig.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

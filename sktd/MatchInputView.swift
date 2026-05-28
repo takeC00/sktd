@@ -24,7 +24,12 @@ struct MatchInputView: View {
     ]
 
     var playerOptions: [String] {
-        authManager.currentCircleMembers.map { $0.userName }
+        authManager.currentCircleMembers.map { $0.userId }
+    }
+
+    func displayName(for userId: String) -> String {
+        authManager.currentCircleMembers.first(where: { $0.userId == userId })?.userName
+        ?? userId
     }
 
     var canRegister: Bool {
@@ -61,6 +66,9 @@ struct MatchInputView: View {
     var body: some View {
         NavigationView {
             ZStack {
+                Color.black
+                    .ignoresSafeArea()
+
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -68,16 +76,20 @@ struct MatchInputView: View {
                     }
 
                 Form {
-                    Section(header: Text("試合形式")) {
+                    Section(header: Text("試合形式").foregroundColor(.gray)) {
                         Picker("試合形式", selection: $matchType) {
                             ForEach(MatchType.allCases, id: \.self) { type in
                                 Text(type.rawValue).tag(type)
                             }
                         }
                         .pickerStyle(SegmentedPickerStyle())
+                        .tint(.orange)
+                        // 未選択側が薄くて見づらいので、セグメント自体をダーク寄りに
+                        .environment(\.colorScheme, .dark)
                     }
+                    .listRowBackground(Color.white.opacity(0.06))
 
-                    Section(header: Text("チームA")) {
+                    Section(header: Text("チームA").foregroundColor(.gray)) {
                         playerPicker(
                             title: "1人目",
                             selection: $teamAPlayer1,
@@ -92,8 +104,9 @@ struct MatchInputView: View {
                             )
                         }
                     }
+                    .listRowBackground(Color.white.opacity(0.06))
 
-                    Section(header: Text("チームB")) {
+                    Section(header: Text("チームB").foregroundColor(.gray)) {
                         playerPicker(
                             title: "1人目",
                             selection: $teamBPlayer1,
@@ -108,12 +121,14 @@ struct MatchInputView: View {
                             )
                         }
                     }
+                    .listRowBackground(Color.white.opacity(0.06))
 
-                    Section(header: Text("スコア")) {
+                    Section(header: Text("スコア").foregroundColor(.gray)) {
                         ForEach(setScores.indices, id: \.self) { index in
                             HStack {
                                 Text("セット\(index + 1)")
                                     .frame(width: 80, alignment: .leading)
+                                    .foregroundColor(.white)
 
                                 Spacer()
 
@@ -122,6 +137,7 @@ struct MatchInputView: View {
                                         .keyboardType(.numberPad)
                                         .multilineTextAlignment(.center)
                                         .frame(width: 50)
+                                        .foregroundColor(.white)
                                         .onChange(of: setScores[index].teamAScore) {
                                             updateWinnerFromScores()
                                         }
@@ -129,11 +145,13 @@ struct MatchInputView: View {
                                     Text("-")
                                         .font(.headline)
                                         .frame(width: 20)
+                                        .foregroundColor(.gray)
 
                                     TextField("B", text: $setScores[index].teamBScore)
                                         .keyboardType(.numberPad)
                                         .multilineTextAlignment(.center)
                                         .frame(width: 50)
+                                        .foregroundColor(.white)
                                         .onChange(of: setScores[index].teamBScore) {
                                             updateWinnerFromScores()
                                         }
@@ -156,10 +174,12 @@ struct MatchInputView: View {
                             .foregroundColor(.red)
                         }
                     }
+                    .listRowBackground(Color.white.opacity(0.06))
 
-                    Section(header: Text("勝者")) {
+                    Section(header: Text("勝者").foregroundColor(.gray)) {
                         HStack {
                             Text("判定結果")
+                                .foregroundColor(.white)
                             Spacer()
 
                             if winner.isEmpty {
@@ -172,6 +192,7 @@ struct MatchInputView: View {
                             }
                         }
                     }
+                    .listRowBackground(Color.white.opacity(0.06))
 
                     Section {
                         Button(action: {
@@ -188,8 +209,17 @@ struct MatchInputView: View {
                         .disabled(!canRegister)
                     }
                 }
+                .scrollContentBackground(.hidden)
             }
             .navigationTitle("試合入力")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .onAppear {
+                // 画面表示時点で members が空のことがあるので再取得
+                authManager.fetchCurrentCircleMembers()
+            }
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -225,11 +255,14 @@ struct MatchInputView: View {
         }
 
         return Picker(title, selection: selection) {
+            Text("選択してください").tag("")
             ForEach(selectablePlayers, id: \.self) { player in
-                Text(player)
+                Text(displayName(for: player))
                     .tag(player)
             }
         }
+        .pickerStyle(.menu)
+        .foregroundColor(.white)
     }
 
     func selectedPlayers(excluding currentValue: String) -> [String] {

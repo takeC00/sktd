@@ -15,22 +15,9 @@
 		39ACB7132FBB0973001A1393 /* sktd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sktd.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		39C309DD2FBE375F0053793C /* Exceptions for "sktd" folder in "sktd" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Untitled.swift,
-			);
-			target = 39ACB7122FBB0973001A1393 /* sktd */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		39ACB7152FBB0973001A1393 /* sktd */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				39C309DD2FBE375F0053793C /* Exceptions for "sktd" folder in "sktd" target */,
-			);
 			path = sktd;
 			sourceTree = "<group>";
 		};

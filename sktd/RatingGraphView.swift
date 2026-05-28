@@ -10,11 +10,11 @@ struct RatingGraphView: View {
 
     // 軸用の値計算
     private var maxValue: Int {
-        values.max() ?? 1500
+        values.max() ?? RatingDefaults.initialRating
     }
 
     private var minValue: Int {
-        values.min() ?? 1500
+        values.min() ?? RatingDefaults.initialRating
     }
 
     private var upperValue: Int {
