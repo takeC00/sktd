@@ -33,7 +33,20 @@ struct MatchInputView: View {
     }
 
     var canRegister: Bool {
-        !hasDuplicatePlayers && hasValidScore && !winner.isEmpty
+        hasSelectedRequiredPlayers
+        && !hasDuplicatePlayers
+        && hasValidScore
+        && !winner.isEmpty
+    }
+
+    var hasSelectedRequiredPlayers: Bool {
+        if matchType == .singles {
+            return !teamAPlayer1.isEmpty && !teamBPlayer1.isEmpty
+        }
+        return !teamAPlayer1.isEmpty
+        && !teamAPlayer2.isEmpty
+        && !teamBPlayer1.isEmpty
+        && !teamBPlayer2.isEmpty
     }
 
     var hasValidScore: Bool {
@@ -60,7 +73,8 @@ struct MatchInputView: View {
             players.append(teamBPlayer2)
         }
 
-        return Set(players).count != players.count
+        let selected = players.filter { !$0.isEmpty }
+        return Set(selected).count != selected.count
     }
 
     var body: some View {
@@ -276,7 +290,9 @@ struct MatchInputView: View {
             players.append(teamBPlayer2)
         }
 
-        return players.filter { $0 != currentValue }
+        return players
+            .filter { !$0.isEmpty }
+            .filter { $0 != currentValue }
     }
 
     func isSelected(_ player: String, excluding currentValue: String) -> Bool {

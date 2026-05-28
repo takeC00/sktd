@@ -270,6 +270,7 @@ struct RankGaugeView: View {
                             weight: .black
                         )
                     )
+                    .foregroundColor(.black)
 
                 Text(remainingPointText)
                     .font(.subheadline)

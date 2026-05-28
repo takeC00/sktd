@@ -165,6 +165,10 @@ struct TopView: View {
                 .padding()
                 .padding(.bottom, 80)
             }
+            .refreshable {
+                authManager.refreshCircles()
+                store.startListeningMatches()
+            }
             .background(
                 Color.black.ignoresSafeArea()
             )

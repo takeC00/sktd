@@ -386,6 +386,11 @@ final class FirebaseAuthManager:
                         return
                     }
 
+                    DispatchQueue.main.async {
+                        self.currentCircleId = circleId
+                    }
+                    self.fetchCurrentCircleMembers()
+
                     self.upsertMembership(
                         circleId: circleId,
                         userId: uid,
@@ -488,6 +493,11 @@ final class FirebaseAuthManager:
                                     completion(.failure(error))
                                     return
                                 }
+
+                                DispatchQueue.main.async {
+                                    self.currentCircleId = circleId
+                                }
+                                self.fetchCurrentCircleMembers()
 
                                 self.upsertMembership(
                                     circleId: circleId,
@@ -710,6 +720,7 @@ final class FirebaseAuthManager:
 
                     if self.currentCircleId == nil {
                         self.currentCircleId = self.joinedCircles.first?.id
+                        self.fetchCurrentCircleMembers()
                     }
                 }
             }
