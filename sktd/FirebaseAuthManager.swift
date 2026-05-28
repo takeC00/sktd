@@ -560,3 +560,72 @@ final class FirebaseAuthManager:
         currentUser != nil
     }
 }
+
+#if DEBUG
+extension FirebaseAuthManager {
+    /// 開発用：Firestore上の主要データを全削除（破壊的）
+    /// - Note: Firebase Auth のアカウント自体は削除しません。
+    func devDeleteAllData(completion: @escaping (Result<Void, Error>) -> Void) {
+        // 依存順に消す（参照が残っても困らない順）
+        devDeleteCollection(named: "circleMembers") { result in
+            switch result {
+            case .failure(let error):
+                completion(.failure(error))
+            case .success:
+                self.devDeleteCollection(named: "circles") { result in
+                    switch result {
+                    case .failure(let error):
+                        completion(.failure(error))
+                    case .success:
+                        self.devDeleteCollection(named: "users") { result in
+                            switch result {
+                            case .failure(let error):
+                                completion(.failure(error))
+                            case .success:
+                                DispatchQueue.main.async {
+                                    self.currentCircleId = nil
+                                    self.joinedCircles = []
+                                    self.currentCircleMembers = []
+                                }
+                                completion(.success(()))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func devDeleteCollection(named name: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let collection = db.collection(name)
+        let pageSize = 200
+
+        func deletePage() {
+            collection.limit(to: pageSize).getDocuments { snapshot, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let docs = snapshot?.documents, !docs.isEmpty else {
+                    completion(.success(()))
+                    return
+                }
+
+                let batch = collection.firestore.batch()
+                docs.forEach { batch.deleteDocument($0.reference) }
+                batch.commit { error in
+                    if let error = error {
+                        completion(.failure(error))
+                        return
+                    }
+                    // 次ページへ
+                    deletePage()
+                }
+            }
+        }
+
+        deletePage()
+    }
+}
+#endif

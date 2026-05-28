@@ -6,6 +6,10 @@ struct LoginView: View {
     @StateObject private var authManager =
         FirebaseAuthManager.shared
 
+    #if DEBUG
+    @State private var showDevReset = false
+    #endif
+
     @State private var email = ""
     @State private var password = ""
     @State private var showPassword = false
@@ -292,6 +296,16 @@ struct LoginView: View {
                                         .font(.headline)
                                         .foregroundColor(.white)
                                     }
+
+                                    #if DEBUG
+                                    Button {
+                                        showDevReset = true
+                                    } label: {
+                                        Text("開発用：DB全削除")
+                                            .font(.caption)
+                                            .foregroundColor(.red.opacity(0.9))
+                                    }
+                                    #endif
                                 }
                                 .padding(.top, 10)
                             }
@@ -316,6 +330,11 @@ struct LoginView: View {
                 }
 
                 .navigationBarHidden(true)
+                #if DEBUG
+                .sheet(isPresented: $showDevReset) {
+                    DevDangerResetView()
+                }
+                #endif
             }
         }
     }
