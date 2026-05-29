@@ -1,6 +1,6 @@
 //
 //  RegisterView.swift
-//  sktd
+//  RallyMate
 //
 
 import SwiftUI

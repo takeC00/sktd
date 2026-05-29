@@ -2,18 +2,15 @@ import SwiftUI
 import FirebaseCore
 
 @main
-struct sktdApp: App {
+struct RallyMateApp: App {
 
     init() {
-
         FirebaseApp.configure()
     }
 
     var body: some Scene {
-
         WindowGroup {
-
-            ContentView()
+            RootView()
         }
     }
 }

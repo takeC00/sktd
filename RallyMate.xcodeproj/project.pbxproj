@@ -12,13 +12,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		39ACB7132FBB0973001A1393 /* sktd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sktd.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		39ACB7132FBB0973001A1393 /* RallyMate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RallyMate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		39ACB7152FBB0973001A1393 /* sktd */ = {
+		39ACB7152FBB0973001A1393 /* RallyMate */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = sktd;
+			path = RallyMate;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -39,7 +39,7 @@
 		39ACB70A2FBB0973001A1393 = {
 			isa = PBXGroup;
 			children = (
-				39ACB7152FBB0973001A1393 /* sktd */,
+				39ACB7152FBB0973001A1393 /* RallyMate */,
 				39ACB7142FBB0973001A1393 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -47,7 +47,7 @@
 		39ACB7142FBB0973001A1393 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				39ACB7132FBB0973001A1393 /* sktd.app */,
+				39ACB7132FBB0973001A1393 /* RallyMate.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,9 +55,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		39ACB7122FBB0973001A1393 /* sktd */ = {
+		39ACB7122FBB0973001A1393 /* RallyMate */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 39ACB71E2FBB0975001A1393 /* Build configuration list for PBXNativeTarget "sktd" */;
+			buildConfigurationList = 39ACB71E2FBB0975001A1393 /* Build configuration list for PBXNativeTarget "RallyMate" */;
 			buildPhases = (
 				39ACB70F2FBB0973001A1393 /* Sources */,
 				39ACB7102FBB0973001A1393 /* Frameworks */,
@@ -68,15 +68,15 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				39ACB7152FBB0973001A1393 /* sktd */,
+				39ACB7152FBB0973001A1393 /* RallyMate */,
 			);
-			name = sktd;
+			name = RallyMate;
 			packageProductDependencies = (
 				39A3FF9C2FC54FC000DE2D90 /* FirebaseAuth */,
 				39A3FF9E2FC54FC000DE2D90 /* FirebaseFirestore */,
 			);
-			productName = sktd;
-			productReference = 39ACB7132FBB0973001A1393 /* sktd.app */;
+			productName = RallyMate;
+			productReference = 39ACB7132FBB0973001A1393 /* RallyMate.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -94,7 +94,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 39ACB70E2FBB0973001A1393 /* Build configuration list for PBXProject "sktd" */;
+			buildConfigurationList = 39ACB70E2FBB0973001A1393 /* Build configuration list for PBXProject "RallyMate" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -111,7 +111,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				39ACB7122FBB0973001A1393 /* sktd */,
+				39ACB7122FBB0973001A1393 /* RallyMate */,
 			);
 		};
 /* End PBXProject section */
@@ -277,7 +277,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.take.sktd;
+				PRODUCT_BUNDLE_IDENTIFIER = com.take.rallymate;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -310,7 +310,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.take.sktd;
+				PRODUCT_BUNDLE_IDENTIFIER = com.take.rallymate;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -325,7 +325,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		39ACB70E2FBB0973001A1393 /* Build configuration list for PBXProject "sktd" */ = {
+		39ACB70E2FBB0973001A1393 /* Build configuration list for PBXProject "RallyMate" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				39ACB71C2FBB0975001A1393 /* Debug */,
@@ -334,7 +334,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		39ACB71E2FBB0975001A1393 /* Build configuration list for PBXNativeTarget "sktd" */ = {
+		39ACB71E2FBB0975001A1393 /* Build configuration list for PBXNativeTarget "RallyMate" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				39ACB71F2FBB0975001A1393 /* Debug */,

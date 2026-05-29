@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "39ACB7122FBB0973001A1393"
-               BuildableName = "sktd.app"
-               BlueprintName = "sktd"
-               ReferencedContainer = "container:sktd.xcodeproj">
+               BuildableName = "RallyMate.app"
+               BlueprintName = "RallyMate"
+               ReferencedContainer = "container:RallyMate.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -46,9 +46,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "39ACB7122FBB0973001A1393"
-            BuildableName = "sktd.app"
-            BlueprintName = "sktd"
-            ReferencedContainer = "container:sktd.xcodeproj">
+            BuildableName = "RallyMate.app"
+            BlueprintName = "RallyMate"
+            ReferencedContainer = "container:RallyMate.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -63,9 +63,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "39ACB7122FBB0973001A1393"
-            BuildableName = "sktd.app"
-            BlueprintName = "sktd"
-            ReferencedContainer = "container:sktd.xcodeproj">
+            BuildableName = "RallyMate.app"
+            BlueprintName = "RallyMate"
+            ReferencedContainer = "container:RallyMate.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
