@@ -360,7 +360,8 @@ struct MatchInputView: View {
             teamBPlayers: teamB,
             setScores: setScores,
             winner: winner,
-            ratingDiff: abs(ratingDiff)
+            ratingDiff: abs(ratingDiff),
+            ratingChangesByUserId: [:]
         )
 
         store.registerMatch(result) { error in

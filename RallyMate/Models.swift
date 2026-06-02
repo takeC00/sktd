@@ -32,6 +32,8 @@ struct MatchResult: Identifiable {
     let setScores: [SetScore]
     let winner: String
     let ratingDiff: Int
+    /// 試合登録時に適用したプレイヤーごとのレート変動（userId → 変動値）
+    let ratingChangesByUserId: [String: Int]
 }
 
 enum RatingDefaults {

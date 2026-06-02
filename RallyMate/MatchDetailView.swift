@@ -5,9 +5,16 @@ struct MatchDetailView: View {
     @ObservedObject var store: AppStore
 
     let match: MatchResult
-    let currentUserName: String
 
     @State private var showEditSheet = false
+
+    private var currentUserId: String {
+        store.currentUserId
+    }
+
+    private var myRatingChange: Int? {
+        store.userRatingChange(for: match, userId: currentUserId)
+    }
 
     var body: some View {
 
@@ -94,24 +101,24 @@ struct MatchDetailView: View {
 
                                 Spacer()
 
-																HStack(spacing: 8) {
+                                HStack(spacing: 8) {
 
-																		HStack(spacing: 2) {
+                                    HStack(spacing: 2) {
 
-																				Text(score.teamAScore)
-																		}
+                                        Text(score.teamAScore)
+                                    }
 
-																		Text("-")
-																				.foregroundColor(.gray)
+                                    Text("-")
+                                        .foregroundColor(.gray)
 
-																		HStack(spacing: 2) {
+                                    HStack(spacing: 2) {
 
-																				Text(score.teamBScore)
-																		}
-																}
-																.fontWeight(.bold)
-																.font(.title3)
-																.foregroundColor(.white)
+                                        Text(score.teamBScore)
+                                    }
+                                }
+                                .fontWeight(.bold)
+                                .font(.title3)
+                                .foregroundColor(.white)
                             }
                             .padding()
                             .background(
@@ -124,26 +131,27 @@ struct MatchDetailView: View {
                     }
                 }
 
-                // MARK: レート変動
+                // MARK: レート変動（自分が出場した試合のみ）
 
-                VStack(
-                    alignment: .leading,
-                    spacing: 12
-                ) {
+                if let change = myRatingChange {
 
-                    Text("レーティング変動")
-                        .font(.headline)
-                        .foregroundColor(.gray)
+                    VStack(
+                        alignment: .leading,
+                        spacing: 12
+                    ) {
 
-                    Text(
-                        "\(match.winner == "A" ? "+" : "-")\(match.ratingDiff)"
-                    )
-                    .font(.system(size: 36, weight: .heavy))
-                    .foregroundColor(
-                        match.winner == "A"
-                        ? .blue
-                        : .red
-                    )
+                        Text("レーティング変動")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+
+                        Text(store.formattedRatingChange(change))
+                            .font(.system(size: 36, weight: .heavy))
+                            .foregroundColor(
+                                change >= 0
+                                ? .orange
+                                : .blue
+                            )
+                    }
                 }
 
                 // MARK: 日時

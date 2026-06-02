@@ -296,7 +296,8 @@ struct MatchEditView: View {
             teamBPlayers: teamBPlayers,
             setScores: setScores,
             winner: winner,
-            ratingDiff: originalMatch.ratingDiff
+            ratingDiff: originalMatch.ratingDiff,
+            ratingChangesByUserId: originalMatch.ratingChangesByUserId
         )
 
         store.updateMatch(updated) { error in

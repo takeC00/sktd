@@ -84,6 +84,7 @@ struct MainTabView: View {
             store.startListeningMatches()
         }
         .onChange(of: authManager.currentCircleId) { _, _ in
+            authManager.fetchCurrentCircleMembers()
             store.startListeningMatches()
         }
     }

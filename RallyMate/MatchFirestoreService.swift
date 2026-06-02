@@ -119,7 +119,8 @@ final class MatchFirestoreService {
                 ]
             },
             "winner": match.winner,
-            "ratingDiff": match.ratingDiff
+            "ratingDiff": match.ratingDiff,
+            "ratingChangesByUserId": match.ratingChangesByUserId
         ]
     }
 
@@ -147,6 +148,9 @@ final class MatchFirestoreService {
             )
         }
 
+        let ratingChangesByUserId =
+            data["ratingChangesByUserId"] as? [String: Int] ?? [:]
+
         return MatchResult(
             id: document.documentID,
             circleId: circleId,
@@ -156,7 +160,8 @@ final class MatchFirestoreService {
             teamBPlayers: teamBPlayers,
             setScores: setScores,
             winner: winner,
-            ratingDiff: ratingDiff
+            ratingDiff: ratingDiff,
+            ratingChangesByUserId: ratingChangesByUserId
         )
     }
 }

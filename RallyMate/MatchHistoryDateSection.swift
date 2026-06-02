@@ -32,8 +32,7 @@ struct MatchHistoryDateSection: View {
 
                         MatchDetailView(
                             store: store,
-                            match: history,
-                            currentUserName: currentUserName
+                            match: history
                         )
 
                     } label: {

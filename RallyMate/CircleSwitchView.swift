@@ -125,6 +125,7 @@ struct CircleSwitchView: View {
                                 let isCurrent = authManager.currentCircleId == circle.id
                                 Button {
                                     authManager.setCurrentCircle(circleId: circle.id) { _ in
+                                        store.stopListeningMatches()
                                         store.startListeningMatches()
                                     }
                                     inviteCode = ""

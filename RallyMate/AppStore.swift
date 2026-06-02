@@ -27,13 +27,15 @@ class AppStore: ObservableObject {
     }
 
     func ratingInCurrentCircle(userId: String) -> Int {
-        authManager.currentCircleMembers
-            .first { $0.userId == userId }?
-            .rating ?? RatingDefaults.initialRating
+        guard let circleId = authManager.currentCircleId else {
+            return RatingDefaults.initialRating
+        }
+        return ratingInCircle(circleId: circleId, userId: userId)
     }
 
     func startListeningMatches() {
         guard let circleId = authManager.currentCircleId else {
+            matchResults = []
             return
         }
 
@@ -43,6 +45,7 @@ class AppStore: ObservableObject {
 
         matchesListener?.remove()
         listeningCircleId = circleId
+        matchResults = []
         isLoadingMatches = true
 
         matchesListener = matchService.listenMatches(circleId: circleId) { [weak self] result in
@@ -91,12 +94,15 @@ class AppStore: ObservableObject {
             teamBPlayers: result.teamBPlayers,
             setScores: result.setScores,
             winner: result.winner,
-            ratingDiff: result.ratingDiff
+            ratingDiff: result.ratingDiff,
+            ratingChangesByUserId: [:]
         )
 
-        let memberRatings = ratingsAfterApplying(match: match, sign: 1)
+        let applied = ratingsAfterApplying(match: match, sign: 1)
+        var savedMatch = match
+        savedMatch.ratingChangesByUserId = applied.changesByUserId
 
-        matchService.register(match: match, memberRatings: memberRatings) { [weak self] result in
+        matchService.register(match: savedMatch, memberRatings: applied.memberRatings) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
 
@@ -130,18 +136,25 @@ class AppStore: ObservableObject {
             return
         }
 
-        var ratings = currentMemberRatings()
-        applyMatchImpact(&ratings, match: oldMatch, sign: -1)
-        applyMatchImpact(&ratings, match: updated, sign: 1)
+        var ratings = currentMemberRatings(for: updated.circleId)
+        applyMatchImpact(&ratings, match: oldMatch, sign: -1, circleId: updated.circleId)
+        applyMatchImpact(&ratings, match: updated, sign: 1, circleId: updated.circleId)
 
-        matchService.update(match: updated, memberRatings: ratings) { [weak self] result in
+        let changesByUserId = ratingChangesFromApplying(
+            match: updated,
+            circleId: updated.circleId
+        )
+        var matchToSave = updated
+        matchToSave.ratingChangesByUserId = changesByUserId
+
+        matchService.update(match: matchToSave, memberRatings: ratings) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
 
                 switch result {
                 case .success:
                     if let index = self.matchResults.firstIndex(where: { $0.id == updated.id }) {
-                        self.matchResults[index] = updated
+                        self.matchResults[index] = matchToSave
                     }
                     self.authManager.fetchCurrentCircleMembers()
                     completion?(nil)
@@ -154,8 +167,12 @@ class AppStore: ObservableObject {
     }
 
     func averageRating(for playerNames: [String]) -> Int {
+        guard let circleId = authManager.currentCircleId else {
+            return RatingDefaults.initialRating
+        }
+
         let ratings = playerNames.compactMap { userId -> Int? in
-            authManager.currentCircleMembers
+            members(in: circleId)
                 .first { $0.userId == userId }?
                 .rating
         }
@@ -217,30 +234,123 @@ class AppStore: ObservableObject {
 
     // MARK: - Rating helpers
 
-    private func currentMemberRatings() -> [String: Int] {
+    func isUserParticipant(in match: MatchResult, userId: String) -> Bool {
+        match.teamAPlayers.contains(userId)
+            || match.teamBPlayers.contains(userId)
+    }
+
+    /// 指定ユーザーがその試合で受けたレート変動（保存値優先、未保存は算出）
+    func userRatingChange(for match: MatchResult, userId: String) -> Int? {
+        guard isUserParticipant(in: match, userId: userId) else {
+            return nil
+        }
+
+        if let stored = match.ratingChangesByUserId[userId] {
+            return stored
+        }
+
+        return estimatedRatingChange(for: match, userId: userId)
+    }
+
+    func formattedRatingChange(_ change: Int) -> String {
+        change >= 0 ? "+\(change)" : "\(change)"
+    }
+
+    private func members(in circleId: String) -> [CircleMembership] {
+        authManager.currentCircleMembers.filter { $0.circleId == circleId }
+    }
+
+    private func currentMemberRatings(for circleId: String) -> [String: Int] {
         Dictionary(
-            uniqueKeysWithValues: authManager.currentCircleMembers.map {
+            uniqueKeysWithValues: members(in: circleId).map {
                 ($0.id, $0.rating)
             }
         )
     }
 
+    private struct AppliedRatings {
+        let memberRatings: [String: Int]
+        let changesByUserId: [String: Int]
+    }
+
     private func ratingsAfterApplying(
         match: MatchResult,
         sign: Int
+    ) -> AppliedRatings {
+        var ratings = currentMemberRatings(for: match.circleId)
+        var changesByUserId: [String: Int] = [:]
+
+        applyMatchImpact(
+            &ratings,
+            match: match,
+            sign: sign,
+            circleId: match.circleId,
+            recordingChangesForUserIds: sign > 0 ? &changesByUserId : nil
+        )
+
+        return AppliedRatings(
+            memberRatings: ratings,
+            changesByUserId: changesByUserId
+        )
+    }
+
+    private func ratingChangesFromApplying(
+        match: MatchResult,
+        circleId: String
     ) -> [String: Int] {
-        var ratings = currentMemberRatings()
-        applyMatchImpact(&ratings, match: match, sign: sign)
-        return ratings
+        var ratings = currentMemberRatings(for: circleId)
+        var changesByUserId: [String: Int] = [:]
+
+        applyMatchImpact(
+            &ratings,
+            match: match,
+            sign: 1,
+            circleId: circleId,
+            recordingChangesForUserIds: &changesByUserId
+        )
+
+        return changesByUserId
+    }
+
+    private func estimatedRatingChange(
+        for match: MatchResult,
+        userId: String
+    ) -> Int? {
+        guard let rawDiff = playerRatingDelta(match: match, playerId: userId) else {
+            return nil
+        }
+
+        let current = ratingInCircle(
+            circleId: match.circleId,
+            userId: userId
+        )
+        var adjustedDiff = rawDiff
+
+        if rawDiff < 0 {
+            adjustedDiff = Int(
+                Double(rawDiff) * lossProtectionMultiplier(rating: current)
+            )
+        }
+
+        let after = max(current + adjustedDiff, RatingRule.normal.minimumRating)
+        return after - current
+    }
+
+    private func ratingInCircle(circleId: String, userId: String) -> Int {
+        members(in: circleId)
+            .first { $0.userId == userId }?
+            .rating ?? RatingDefaults.initialRating
     }
 
     private func applyMatchImpact(
         _ ratings: inout [String: Int],
         match: MatchResult,
         sign: Int,
-        rule: RatingRule = .normal
+        circleId: String,
+        rule: RatingRule = .normal,
+        recordingChangesForUserIds: inout [String: Int]? = nil
     ) {
-        let members = authManager.currentCircleMembers
+        let members = members(in: circleId)
         let allPlayers = match.teamAPlayers + match.teamBPlayers
 
         for userId in allPlayers {
@@ -264,7 +374,13 @@ class AppStore: ObservableObject {
                 )
             }
 
-            ratings[member.id] = max(current + adjustedDiff, rule.minimumRating)
+            let updated = max(current + adjustedDiff, rule.minimumRating)
+            ratings[member.id] = updated
+
+            if sign > 0, var changes = recordingChangesForUserIds {
+                changes[userId] = updated - current
+                recordingChangesForUserIds = changes
+            }
         }
     }
 

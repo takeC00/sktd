@@ -11,10 +11,7 @@ struct TopView: View {
     @State private var showDeleteAccountSheet = false
 
     var myRating: Int {
-        authManager.currentCircleMembers
-            .first(where: { $0.userId == store.currentUserId })?
-            .rating
-        ?? RatingDefaults.initialRating
+        store.ratingInCurrentCircle(userId: store.currentUserId)
     }
 
     var currentCircleMatches: [MatchResult] {
@@ -34,24 +31,8 @@ struct TopView: View {
                 .prefix(20)
         )
 
-        let signedDiffs = targetMatches.map {
-            match -> Int in
-
-            if match.teamAPlayers.contains(store.currentUserId) {
-
-                return match.winner == "A"
-                    ? match.ratingDiff
-                    : -match.ratingDiff
-            }
-
-            if match.teamBPlayers.contains(store.currentUserId) {
-
-                return match.winner == "B"
-                    ? match.ratingDiff
-                    : -match.ratingDiff
-            }
-
-            return 0
+        let signedDiffs = targetMatches.compactMap {
+            store.userRatingChange(for: $0, userId: store.currentUserId)
         }
 
         let totalDiff =

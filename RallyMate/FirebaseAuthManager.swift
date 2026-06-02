@@ -496,6 +496,7 @@ final class FirebaseAuthManager:
 
                                 DispatchQueue.main.async {
                                     self.currentCircleId = circleId
+                                    self.currentCircleMembers = []
                                 }
                                 self.fetchCurrentCircleMembers()
 
@@ -543,6 +544,7 @@ final class FirebaseAuthManager:
                 }
                 DispatchQueue.main.async {
                     self.currentCircleId = circleId
+                    self.currentCircleMembers = []
                 }
                 self.fetchCurrentCircleMembers()
                 completion?(.success(()))
