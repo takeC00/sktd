@@ -137,8 +137,21 @@ class AppStore: ObservableObject {
         }
 
         var ratings = currentMemberRatings(for: updated.circleId)
-        applyMatchImpact(&ratings, match: oldMatch, sign: -1, circleId: updated.circleId)
-        applyMatchImpact(&ratings, match: updated, sign: 1, circleId: updated.circleId)
+        var discardedChanges: [String: Int] = [:]
+        applyMatchImpact(
+            &ratings,
+            match: oldMatch,
+            sign: -1,
+            circleId: updated.circleId,
+            changesByUserId: &discardedChanges
+        )
+        applyMatchImpact(
+            &ratings,
+            match: updated,
+            sign: 1,
+            circleId: updated.circleId,
+            changesByUserId: &discardedChanges
+        )
 
         let changesByUserId = ratingChangesFromApplying(
             match: updated,
@@ -285,7 +298,8 @@ class AppStore: ObservableObject {
             match: match,
             sign: sign,
             circleId: match.circleId,
-            recordingChangesForUserIds: sign > 0 ? &changesByUserId : nil
+            recordChanges: sign > 0,
+            changesByUserId: &changesByUserId
         )
 
         return AppliedRatings(
@@ -306,7 +320,8 @@ class AppStore: ObservableObject {
             match: match,
             sign: 1,
             circleId: circleId,
-            recordingChangesForUserIds: &changesByUserId
+            recordChanges: true,
+            changesByUserId: &changesByUserId
         )
 
         return changesByUserId
@@ -348,7 +363,8 @@ class AppStore: ObservableObject {
         sign: Int,
         circleId: String,
         rule: RatingRule = .normal,
-        recordingChangesForUserIds: inout [String: Int]? = nil
+        recordChanges: Bool = false,
+        changesByUserId: inout [String: Int]
     ) {
         let members = members(in: circleId)
         let allPlayers = match.teamAPlayers + match.teamBPlayers
@@ -377,9 +393,8 @@ class AppStore: ObservableObject {
             let updated = max(current + adjustedDiff, rule.minimumRating)
             ratings[member.id] = updated
 
-            if sign > 0, var changes = recordingChangesForUserIds {
-                changes[userId] = updated - current
-                recordingChangesForUserIds = changes
+            if sign > 0, recordChanges {
+                changesByUserId[userId] = updated - current
             }
         }
     }
