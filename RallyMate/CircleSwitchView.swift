@@ -11,9 +11,12 @@ struct CircleSwitchView: View {
     @State private var showJoinSheet = false
     @State private var showCreateSheet = false
     @State private var showCircleSelectSheet = false
+    @State private var showDeleteConfirm = false
 
     @State private var inviteCode = ""
     @State private var copied = false
+    @State private var isDeletingCircle = false
+    @State private var deleteError = ""
 
     var body: some View {
         NavigationStack {
@@ -85,6 +88,31 @@ struct CircleSwitchView: View {
                     }
                 }
                 .listRowBackground(Color.white.opacity(0.06))
+
+                if let current = currentCircle, authManager.isCircleOwner(current) {
+                    Section(header: Text("オーナー操作").foregroundColor(.gray)) {
+                        Button(role: .destructive) {
+                            showDeleteConfirm = true
+                        } label: {
+                            if isDeletingCircle {
+                                HStack {
+                                    ProgressView()
+                                    Text("削除中...")
+                                }
+                            } else {
+                                Text("サークルを削除")
+                            }
+                        }
+                        .disabled(isDeletingCircle)
+
+                        if !deleteError.isEmpty {
+                            Text(deleteError)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .listRowBackground(Color.white.opacity(0.06))
+                }
 
                 Section {
                     Button("サークルを作成") {
@@ -158,9 +186,41 @@ struct CircleSwitchView: View {
                     }
                 }
             }
+            .confirmationDialog(
+                "サークルを削除しますか？",
+                isPresented: $showDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("削除", role: .destructive) {
+                    Task { await deleteCurrentCircle() }
+                }
+                Button("キャンセル", role: .cancel) {}
+            } message: {
+                if let current = currentCircle {
+                    Text("「\(current.name)」と関連データがすべて削除されます。この操作は取り消せません。")
+                }
+            }
             .onAppear {
                 authManager.refreshCircles()
             }
+        }
+    }
+
+    private func deleteCurrentCircle() async {
+        guard let current = currentCircle else { return }
+
+        isDeletingCircle = true
+        deleteError = ""
+        defer { isDeletingCircle = false }
+
+        do {
+            try await authManager.deleteCircle(current)
+            store.stopListeningMatches()
+            store.startListeningMatches()
+            inviteCode = ""
+            copied = false
+        } catch {
+            deleteError = error.localizedDescription
         }
     }
 

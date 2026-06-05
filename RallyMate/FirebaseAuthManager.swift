@@ -173,6 +173,121 @@ final class FirebaseAuthManager:
         }
     }
 
+    // MARK: サークル削除
+
+    func deleteCircle(_ circle: Circle) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            throw NSError(
+                domain: "RallyMate",
+                code: -2,
+                userInfo: [NSLocalizedDescriptionKey: "ログイン情報が取得できません"]
+            )
+        }
+        guard circle.ownerId == uid else {
+            throw NSError(
+                domain: "RallyMate",
+                code: -4,
+                userInfo: [NSLocalizedDescriptionKey: "サークルのオーナーのみ削除できます"]
+            )
+        }
+
+        let circleId = circle.id
+
+        try await deleteDocuments(
+            in: db.collection("eventParticipants").whereField("circleId", isEqualTo: circleId)
+        )
+        try await deleteDocuments(
+            in: db.collection("eventVisitors").whereField("circleId", isEqualTo: circleId)
+        )
+        try await deleteDocuments(
+            in: db.collection("events").whereField("circleId", isEqualTo: circleId)
+        )
+        try await deleteDocuments(
+            in: db.collection("announcements").whereField("circleId", isEqualTo: circleId)
+        )
+        try await deleteDocuments(
+            in: db.collection("circleRoster").whereField("circleId", isEqualTo: circleId)
+        )
+        try await deleteDocuments(
+            in: db.collection("matches").whereField("circleId", isEqualTo: circleId)
+        )
+
+        let sessions = try await db.collection("sessions")
+            .whereField("circleId", isEqualTo: circleId)
+            .getDocuments()
+        for document in sessions.documents {
+            try await deleteSession(document.documentID)
+        }
+
+        let stableSessionId = circleId.lowercased()
+        let stableRef = db.collection("sessions").document(stableSessionId)
+        if (try await stableRef.getDocument()).exists {
+            try await deleteSession(stableSessionId)
+        }
+
+        try await deleteDocuments(
+            in: db.collection("circleMembers").whereField("circleId", isEqualTo: circleId)
+        )
+
+        try await db.collection("circles").document(circleId).delete()
+
+        let userRef = db.collection("users").document(uid)
+        let userDoc = try await userRef.getDocument()
+        if userDoc.data()?["currentCircleId"] as? String == circleId {
+            try await userRef.updateData([
+                "currentCircleId": FieldValue.delete(),
+                "updatedAt": Timestamp()
+            ])
+        }
+
+        await MainActor.run {
+            self.joinedCircles.removeAll { $0.id == circleId }
+            if self.currentCircleId == circleId {
+                self.currentCircleId = self.joinedCircles.first?.id
+            }
+            self.currentCircleMembers = []
+        }
+
+        refreshCircles()
+    }
+
+    private func deleteDocuments(in query: Query) async throws {
+        while true {
+            let snapshot = try await query.limit(to: 300).getDocuments()
+            if snapshot.isEmpty { return }
+
+            let batch = db.batch()
+            for document in snapshot.documents {
+                batch.deleteDocument(document.reference)
+            }
+            try await batch.commit()
+        }
+    }
+
+    private func deleteSession(_ sessionId: String) async throws {
+        let sessionRef = db.collection("sessions").document(sessionId)
+        try await deleteCollection(sessionRef.collection("matches"))
+        try await deleteCollection(sessionRef.collection("sessionPlayers"))
+        try await sessionRef.delete()
+    }
+
+    private func deleteCollection(_ collection: CollectionReference) async throws {
+        while true {
+            let snapshot = try await collection.limit(to: 300).getDocuments()
+            if snapshot.isEmpty { return }
+
+            let batch = db.batch()
+            for document in snapshot.documents {
+                batch.deleteDocument(document.reference)
+            }
+            try await batch.commit()
+        }
+    }
+
+    func isCircleOwner(_ circle: Circle) -> Bool {
+        Auth.auth().currentUser?.uid == circle.ownerId
+    }
+
     // MARK: ログアウト
 
     func logout() {
