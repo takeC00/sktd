@@ -60,6 +60,7 @@ struct MateDayParticipantFormView: View {
         .overlay {
             if isSaving { ProgressView() }
         }
+        .rallyDarkFormScreen()
     }
 
     private func save() async {

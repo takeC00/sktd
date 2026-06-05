@@ -152,11 +152,13 @@ struct CircleSwitchView: View {
                 NavigationStack {
                     CircleJoinView()
                 }
+                .rallyDarkFormScreen()
             }
             .sheet(isPresented: $showCreateSheet) {
                 NavigationStack {
                     CircleCreateView()
                 }
+                .rallyDarkFormScreen()
             }
             .sheet(isPresented: $showCircleSelectSheet) {
                 NavigationStack {

@@ -86,6 +86,7 @@ struct MateManualMemberFormView: View {
             }
             Button("キャンセル", role: .cancel) {}
         }
+        .rallyDarkFormScreen()
     }
 
     private func save() async {

@@ -52,5 +52,6 @@ struct RootView: View {
                     .zIndex(1)
             }
         }
+        .background(Color.black.ignoresSafeArea())
     }
 }

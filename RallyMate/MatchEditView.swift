@@ -244,6 +244,7 @@ struct MatchEditView: View {
             .onAppear {
                 authManager.fetchCurrentCircleMembers()
             }
+            .rallyDarkFormScreen()
         }
     }
 

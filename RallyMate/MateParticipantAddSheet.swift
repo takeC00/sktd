@@ -84,6 +84,7 @@ struct MateParticipantAddSheet: View {
                     Button("閉じる") { dismiss() }
                 }
             }
+            .rallyDarkFormScreen()
         }
     }
 }

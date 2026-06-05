@@ -202,6 +202,8 @@ struct RatingExplanationView: View {
             .padding()
         }
         .navigationTitle("計算方法")
+        .rallyDarkScreenBackground()
+        .rallyDarkNavigationBar()
     }
 
     func explanationCard(title: String, text: String) -> some View {

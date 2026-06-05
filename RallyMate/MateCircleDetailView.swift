@@ -138,6 +138,8 @@ struct MateCircleDetailView: View {
             }
         }
         .navigationTitle(circle.name)
+        .rallyDarkScreenBackground()
+        .rallyDarkNavigationBar()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -363,6 +365,7 @@ struct MateRegisteredMemberFormView: View {
         } message: {
             Text("「\(member.userName)」をサークルから除外します。")
         }
+        .rallyDarkFormScreen()
     }
 
     private func save() async {

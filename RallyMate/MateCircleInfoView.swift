@@ -38,5 +38,6 @@ struct MateCircleInfoView: View {
         .onAppear {
             authManager.fetchCurrentCircleMembers()
         }
+        .rallyDarkFormScreen()
     }
 }
