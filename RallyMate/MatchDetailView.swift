@@ -194,7 +194,7 @@ struct MatchDetailView: View {
 
         .toolbar {
 
-            if match.id == store.matchResults.first?.id {
+            if match.id == store.matchesForCurrentCircle.first?.id {
 
                 ToolbarItem(
                     placement: .topBarTrailing

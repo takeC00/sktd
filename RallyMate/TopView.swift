@@ -15,56 +15,20 @@ struct TopView: View {
         store.ratingInCurrentCircle(userId: store.currentUserId)
     }
 
-    var currentCircleMatches: [MatchResult] {
-        store.matchResults
-    }
-
     var ratingHistories: [Int] {
-
-        let targetMatches = Array(
-            currentCircleMatches
-                .filter {
-
-                    $0.teamAPlayers.contains(store.currentUserId)
-                    ||
-                    $0.teamBPlayers.contains(store.currentUserId)
-                }
-                .prefix(20)
-        )
-
-        let signedDiffs = targetMatches.compactMap {
-            store.userRatingChange(for: $0, userId: store.currentUserId)
-        }
-
-        let totalDiff =
-            signedDiffs.reduce(0, +)
-
-        var values = [
-            myRating - totalDiff
-        ]
-
-        for diff in signedDiffs.reversed() {
-
-            values.append(
-                values.last! + diff
-            )
-        }
-
-        return values
+        store.ratingHistory(for: store.currentUserId)
     }
 
     var recentMatches: [MatchResult] {
-
-        Array(
-            currentCircleMatches
-                .filter {
-
-                    $0.teamAPlayers.contains(store.currentUserId)
-                    ||
-                    $0.teamBPlayers.contains(store.currentUserId)
-                }
-                .prefix(3)
+        store.participantMatchesForCurrentCircle(
+            userId: store.currentUserId,
+            limit: 3
         )
+    }
+
+    private var currentCircleName: String? {
+        guard let circleId = authManager.currentCircleId else { return nil }
+        return authManager.joinedCircles.first { $0.id == circleId }?.name
     }
 
     var body: some View {
@@ -85,10 +49,17 @@ struct TopView: View {
                     ) {
 
                         HStack(spacing: 6) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("レーティング")
+                                    .font(.headline)
+                                    .foregroundColor(.gray)
 
-                            Text("レーティング")
-                                .font(.headline)
-                                .foregroundColor(.gray)
+                                if let circleName = currentCircleName {
+                                    Text(circleName)
+                                        .font(.caption)
+                                        .foregroundColor(.orange)
+                                }
+                            }
 
                             NavigationLink(
                                 destination:
@@ -204,6 +175,10 @@ struct TopView: View {
 
             .onAppear {
                 authManager.refreshCircles()
+                store.startListeningMatches()
+            }
+            .onChange(of: authManager.currentCircleId) { _, _ in
+                authManager.fetchCurrentCircleMembers()
                 store.startListeningMatches()
             }
 

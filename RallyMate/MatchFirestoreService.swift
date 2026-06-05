@@ -15,16 +15,17 @@ final class MatchFirestoreService {
     ) -> ListenerRegistration {
         db.collection("matches")
             .whereField("circleId", isEqualTo: circleId)
-            .order(by: "date", descending: true)
             .addSnapshotListener { snapshot, error in
                 if let error = error {
                     onChange(.failure(error))
                     return
                 }
 
-                let matches = snapshot?.documents.compactMap {
+                let matches = (snapshot?.documents.compactMap {
                     Self.match(from: $0)
-                } ?? []
+                } ?? [])
+                    .filter { $0.circleId == circleId }
+                    .sorted { $0.date > $1.date }
                 onChange(.success(matches))
             }
     }
@@ -35,16 +36,17 @@ final class MatchFirestoreService {
     ) {
         db.collection("matches")
             .whereField("circleId", isEqualTo: circleId)
-            .order(by: "date", descending: true)
             .getDocuments { snapshot, error in
                 if let error = error {
                     completion(.failure(error))
                     return
                 }
 
-                let matches = snapshot?.documents.compactMap {
+                let matches = (snapshot?.documents.compactMap {
                     Self.match(from: $0)
-                } ?? []
+                } ?? [])
+                    .filter { $0.circleId == circleId }
+                    .sorted { $0.date > $1.date }
 
                 completion(.success(matches))
             }
