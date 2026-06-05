@@ -19,7 +19,7 @@ struct ProfileSettingsView: View {
                 TextField("表示名", text: $name)
                     .textInputAutocapitalization(.words)
 
-                if let email = authManager.currentUser?.email {
+                if let email = authManager.currentUserEmail {
                     LabeledContent("メール", value: email)
                 }
             } header: {

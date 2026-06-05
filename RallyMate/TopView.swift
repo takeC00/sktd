@@ -173,7 +173,7 @@ struct TopView: View {
                         if !authManager.currentUserName.isEmpty {
                             Text(authManager.currentUserName)
                         }
-                        if let email = authManager.currentUser?.email {
+                        if let email = authManager.currentUserEmail {
                             Text(email)
                                 .font(.caption)
                         }

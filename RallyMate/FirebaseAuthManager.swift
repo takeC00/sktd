@@ -23,6 +23,10 @@ final class FirebaseAuthManager:
 
     @Published var currentUserName: String = ""
 
+    var currentUserEmail: String? {
+        currentUser?.email
+    }
+
     private let db =
         Firestore.firestore()
 
