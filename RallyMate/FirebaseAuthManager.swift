@@ -21,13 +21,22 @@ final class FirebaseAuthManager:
     // 選択中サークルの所属メンバー（中間テーブル）
     @Published var currentCircleMembers: [CircleMembership] = []
 
-    /// RallyMatch の Visitor（circleRoster・userId なし）
-    @Published var currentCircleVisitors: [CircleVisitor] = []
+    /// 今日だけ参加・旧 Visitor 等（レーティング対象外）
+    @Published var currentCircleGuests: [CircleGuestParticipant] = []
+
+    /// 後方互換
+    var currentCircleVisitors: [CircleGuestParticipant] {
+        currentCircleGuests
+    }
 
     @Published var currentUserName: String = ""
 
     var currentUserEmail: String? {
         currentUser?.email
+    }
+
+    var uid: String? {
+        currentUser?.uid
     }
 
     private let db =
@@ -209,6 +218,9 @@ final class FirebaseAuthManager:
             in: db.collection("announcements").whereField("circleId", isEqualTo: circleId)
         )
         try await deleteDocuments(
+            in: db.collection("circleDayParticipants").whereField("circleId", isEqualTo: circleId)
+        )
+        try await deleteDocuments(
             in: db.collection("circleRoster").whereField("circleId", isEqualTo: circleId)
         )
         try await deleteDocuments(
@@ -320,6 +332,14 @@ final class FirebaseAuthManager:
 
     /// 自分のFirebase Authアカウント削除 + Firestoreの関連データ掃除（Functionsなし運用）
     /// - Note: 多くの場合 `reauthenticate` が必須です（パスワードユーザーは password を渡す）。
+    func deleteMyAccount(password: String?) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            deleteMyAccount(password: password) { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
     func deleteMyAccount(
         password: String?,
         completion: @escaping (Result<Void, Error>) -> Void
@@ -771,9 +791,13 @@ final class FirebaseAuthManager:
                     "circleId": circleId,
                     "userId": userId,
                     "userName": userName,
+                    "displayName": userName,
                     "rating": RatingDefaults.initialRating,
                     "role": role,
-                    "joinedAt": Timestamp()
+                    "memberType": MemberType.registered.rawValue,
+                    "isActive": true,
+                    "joinedAt": Timestamp(),
+                    "updatedAt": Timestamp(),
                 ]
 
                 self.db.collection("circleMembers")
@@ -788,64 +812,165 @@ final class FirebaseAuthManager:
             }
     }
 
-    func visitorName(for playerId: String) -> String? {
-        guard VisitorIdentity.isVisitor(playerId) else { return nil }
-        if let rosterId = VisitorIdentity.rosterDocumentId(from: playerId),
-           let visitor = currentCircleVisitors.first(where: { $0.rosterDocumentId == rosterId }) {
-            return visitor.name
-        }
-        return currentCircleVisitors.first(where: { $0.playerId == playerId })?.name
+    /// 試合入力で選べる参加者 ID（メンバー + ゲスト）
+    var allMatchParticipantIds: [String] {
+        let memberIds = currentCircleMembers.map(\.matchParticipantId)
+        let guestIds = currentCircleGuests.map(\.matchParticipantId)
+        return memberIds + guestIds
     }
 
-    func fetchCurrentCircleVisitors() {
+    func guestName(for playerId: String) -> String? {
+        currentCircleGuests.first(where: { $0.matchParticipantId == playerId })?.name
+    }
+
+    func visitorName(for playerId: String) -> String? {
+        guestName(for: playerId)
+    }
+
+    func fetchCurrentCircleGuests() {
         guard let circleId = currentCircleId else {
             DispatchQueue.main.async {
-                self.currentCircleVisitors = []
+                self.currentCircleGuests = []
             }
             return
         }
 
+        let group = DispatchGroup()
+        var rosterGuests: [CircleGuestParticipant] = []
+        var dayGuests: [CircleGuestParticipant] = []
+        var eventGuests: [CircleGuestParticipant] = []
+
+        group.enter()
         db.collection("circleRoster")
             .whereField("circleId", isEqualTo: circleId)
-            .getDocuments { snapshot, error in
-                if let error = error {
-                    print(error.localizedDescription)
-                    return
-                }
-
-                let visitors: [CircleVisitor] = snapshot?.documents.compactMap { doc in
-                    let data = doc.data()
-                    guard data["userId"] == nil,
-                          let name = data["name"] as? String,
-                          !name.isEmpty else {
-                        return nil
-                    }
-
-                    return CircleVisitor(
-                        playerId: VisitorIdentity.playerId(rosterDocumentId: doc.documentID),
-                        rosterDocumentId: doc.documentID,
-                        name: name
-                    )
+            .getDocuments { snapshot, _ in
+                rosterGuests = snapshot?.documents.compactMap { doc in
+                    Self.legacyRosterGuest(from: doc)
                 } ?? []
-
-                DispatchQueue.main.async {
-                    self.currentCircleVisitors = visitors.sorted {
-                        $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-                    }
-                }
+                group.leave()
             }
+
+        group.enter()
+        db.collection("circleDayParticipants")
+            .whereField("circleId", isEqualTo: circleId)
+            .getDocuments { snapshot, _ in
+                dayGuests = snapshot?.documents.compactMap { doc in
+                    Self.dayParticipantGuest(from: doc, circleId: circleId)
+                } ?? []
+                group.leave()
+            }
+
+        group.enter()
+        db.collection("eventVisitors")
+            .whereField("circleId", isEqualTo: circleId)
+            .getDocuments { snapshot, _ in
+                eventGuests = snapshot?.documents.compactMap { doc in
+                    Self.eventVisitorGuest(from: doc)
+                } ?? []
+                group.leave()
+            }
+
+        group.notify(queue: .main) {
+            var seen = Set<String>()
+            var merged: [CircleGuestParticipant] = []
+            for guest in rosterGuests + dayGuests + eventGuests {
+                guard seen.insert(guest.matchParticipantId).inserted else { continue }
+                merged.append(guest)
+            }
+            self.currentCircleGuests = merged.sorted {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        }
+    }
+
+    func fetchCurrentCircleVisitors() {
+        fetchCurrentCircleGuests()
+    }
+
+    private static func legacyRosterGuest(from doc: QueryDocumentSnapshot) -> CircleGuestParticipant? {
+        let data = doc.data()
+        guard data["userId"] == nil,
+              data["circleMemberId"] == nil,
+              let name = data["name"] as? String,
+              !name.isEmpty else {
+            return nil
+        }
+
+        let memberType = data["memberType"] as? String
+        if memberType == MemberType.manual.rawValue || memberType == MemberType.registered.rawValue {
+            return nil
+        }
+
+        return CircleGuestParticipant(
+            matchParticipantId: VisitorIdentity.playerId(rosterDocumentId: doc.documentID),
+            name: name
+        )
+    }
+
+    private static func dayParticipantGuest(
+        from doc: QueryDocumentSnapshot,
+        circleId: String
+    ) -> CircleGuestParticipant? {
+        let data = doc.data()
+        guard data["circleId"] as? String == circleId,
+              data["dateKey"] as? String == Self.todayKeyInJST(),
+              let name = data["name"] as? String,
+              !name.isEmpty,
+              let participantIdRaw = data["participantId"] as? String,
+              let participantId = UUID(uuidString: participantIdRaw) else {
+            return nil
+        }
+
+        return CircleGuestParticipant(
+            matchParticipantId: DayParticipantIdentity.playerId(
+                circleId: circleId,
+                participantId: participantId
+            ),
+            name: name,
+            level: data["level"] as? String
+        )
+    }
+
+    private static func eventVisitorGuest(from doc: QueryDocumentSnapshot) -> CircleGuestParticipant? {
+        let data = doc.data()
+        guard let name = data["name"] as? String,
+              !name.isEmpty else {
+            return nil
+        }
+
+        let createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? .distantPast
+        guard Self.isSameDayInJST(createdAt, Date()) else { return nil }
+
+        return CircleGuestParticipant(
+            matchParticipantId: EventVisitorIdentity.playerId(visitorId: doc.documentID),
+            name: name
+        )
+    }
+
+    private static func todayKeyInJST(now: Date = .now) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.timeZone = TimeZone(identifier: "Asia/Tokyo")
+        formatter.dateFormat = "yyyy/MM/dd"
+        return formatter.string(from: now)
+    }
+
+    private static func isSameDayInJST(_ lhs: Date, _ rhs: Date) -> Bool {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        return calendar.isDate(lhs, inSameDayAs: rhs)
     }
 
     func fetchCurrentCircleMembers() {
         guard let circleId = currentCircleId else {
             DispatchQueue.main.async {
                 self.currentCircleMembers = []
-                self.currentCircleVisitors = []
+                self.currentCircleGuests = []
             }
             return
         }
 
-        fetchCurrentCircleVisitors()
+        fetchCurrentCircleGuests()
 
         db.collection("circleMembers")
             .whereField("circleId", isEqualTo: circleId)
@@ -855,34 +980,8 @@ final class FirebaseAuthManager:
                     return
                 }
 
-                let members: [CircleMembership] = snapshot?.documents.compactMap { doc in
-                    let data = doc.data()
-                    guard
-                        let circleId = data["circleId"] as? String,
-                        let userId = data["userId"] as? String,
-                        let role = data["role"] as? String,
-                        let joinedAt = data["joinedAt"] as? Timestamp
-                    else {
-                        return nil
-                    }
-
-                    let userName = (data["userName"] as? String)
-                        ?? (data["nickname"] as? String)
-                        ?? ""
-                    guard !userName.isEmpty else { return nil }
-
-                    let rating = Self.intValue(from: data["rating"])
-                        ?? RatingDefaults.initialRating
-
-                    return CircleMembership(
-                        id: doc.documentID,
-                        circleId: circleId,
-                        userId: userId,
-                        userName: userName,
-                        rating: rating,
-                        role: role,
-                        joinedAt: joinedAt.dateValue()
-                    )
+                let members: [CircleMembership] = snapshot?.documents.compactMap {
+                    CircleMembersService.member(from: $0)
                 } ?? []
 
                 DispatchQueue.main.async {

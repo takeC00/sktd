@@ -4,6 +4,7 @@ struct MatchHistoryView: View {
 
     @ObservedObject var store: AppStore
     @StateObject private var authManager = FirebaseAuthManager.shared
+    @State private var showAccountSettings = false
 
     var currentCircleHistories: [MatchResult] {
         store.matchesForCurrentCircle.sorted { $0.date > $1.date }
@@ -66,8 +67,7 @@ struct MatchHistoryView: View {
                                 MatchHistoryDateSection(
                                     store: store,
                                     date: date,
-                                    histories: groupedHistories[date] ?? [],
-                                    currentUserName: store.currentUserId
+                                    histories: groupedHistories[date] ?? []
                                 )
                             }
                         }
@@ -86,6 +86,8 @@ struct MatchHistoryView: View {
             .toolbarBackground(.black, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .accountToolbar(showAccountSettings: $showAccountSettings)
+            .accountSettingsSheet(isPresented: $showAccountSettings)
             .onAppear {
                 store.startListeningMatches()
             }

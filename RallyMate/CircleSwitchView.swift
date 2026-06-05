@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct CircleSwitchView: View {
 
@@ -12,16 +11,15 @@ struct CircleSwitchView: View {
     @State private var showCreateSheet = false
     @State private var showCircleSelectSheet = false
     @State private var showDeleteConfirm = false
+    @State private var showAccountSettings = false
 
-    @State private var inviteCode = ""
-    @State private var copied = false
     @State private var isDeletingCircle = false
     @State private var deleteError = ""
 
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text("現在のサークル").foregroundColor(.gray)) {
+                Section(header: sectionHeader("現在のサークル")) {
                     if let current = currentCircle {
                         Button {
                             showCircleSelectSheet = true
@@ -32,13 +30,17 @@ struct CircleSwitchView: View {
                                         .font(.headline)
                                         .foregroundColor(.white)
 
-                                    Text(current.description)
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
+                                    if !current.description.isEmpty {
+                                        Text(current.description)
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
 
-                                    Text("ID: \(current.id)")
-                                        .font(.caption2)
-                                        .foregroundColor(.gray)
+                                    if !current.sportName.isEmpty {
+                                        Text(current.sportName)
+                                            .font(.caption2)
+                                            .foregroundColor(.gray)
+                                    }
                                 }
 
                                 Spacer()
@@ -61,36 +63,44 @@ struct CircleSwitchView: View {
                         }
                     }
                 }
-                .listRowBackground(Color.white.opacity(0.06))
+                .listRowBackground(CircleTabStyle.rowBackground)
 
-                Section(header: Text("招待コード").foregroundColor(.gray)) {
-                    if let current = currentCircle {
-                        HStack {
-                            Text(current.circleCode)
-                                .font(.headline)
-                                .foregroundColor(.white)
-
-                            Spacer()
-
-                            Button(copied ? "コピー済み" : "コピー") {
-                                UIPasteboard.general.string = current.circleCode
-                                copied = true
+                if let current = currentCircle {
+                    Section(header: sectionHeader("メンバー・参加者")) {
+                        NavigationLink {
+                            MateCircleDetailView(circle: current)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("参加者を管理")
+                                        .foregroundColor(.white)
+                                    Text("\(memberSummary) 名")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
                             }
                         }
 
-                        Text("このコードを共有すると、同じサークルに参加できます。")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    } else {
-                        Text("サークルを選択すると招待コードが表示されます")
-                            .font(.caption)
-                            .foregroundColor(.gray)
+                        NavigationLink {
+                            MateCircleInfoView(circle: current)
+                        } label: {
+                            Text("サークル情報")
+                                .foregroundColor(.white)
+                        }
                     }
+                    .listRowBackground(CircleTabStyle.rowBackground)
                 }
-                .listRowBackground(Color.white.opacity(0.06))
+
+                Section(header: sectionHeader("新しいサークルに参加")) {
+                    Button("招待コードで参加する") {
+                        showJoinSheet = true
+                    }
+                    .foregroundColor(.white)
+                }
+                .listRowBackground(CircleTabStyle.rowBackground)
 
                 if let current = currentCircle, authManager.isCircleOwner(current) {
-                    Section(header: Text("オーナー操作").foregroundColor(.gray)) {
+                    Section(header: sectionHeader("オーナー操作")) {
                         Button(role: .destructive) {
                             showDeleteConfirm = true
                         } label: {
@@ -111,30 +121,33 @@ struct CircleSwitchView: View {
                                 .foregroundColor(.red)
                         }
                     }
-                    .listRowBackground(Color.white.opacity(0.06))
+                    .listRowBackground(CircleTabStyle.rowBackground)
                 }
-
-                Section {
-                    Button("サークルを作成") {
-                        showCreateSheet = true
-                    }
-                }
-                .listRowBackground(Color.white.opacity(0.06))
-
-                Section(header: Text("新しいサークルに参加").foregroundColor(.gray)) {
-                    Button("招待コードで参加する") {
-                        showJoinSheet = true
-                    }
-                }
-                .listRowBackground(Color.white.opacity(0.06))
             }
             .navigationTitle("サークル")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.black, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showCreateSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .foregroundStyle(.white)
+                    }
+                    .accessibilityLabel("サークルを作成")
+                }
+            }
+            .accountToolbar(showAccountSettings: $showAccountSettings)
+            .accountSettingsSheet(isPresented: $showAccountSettings)
             .scrollContentBackground(.hidden)
             .background(Color.black.ignoresSafeArea())
+            .refreshable {
+                authManager.refreshCircles()
+                authManager.fetchCurrentCircleMembers()
+            }
             .sheet(isPresented: $showJoinSheet) {
                 NavigationStack {
                     CircleJoinView()
@@ -148,24 +161,21 @@ struct CircleSwitchView: View {
             .sheet(isPresented: $showCircleSelectSheet) {
                 NavigationStack {
                     List {
-                        Section(header: Text("サークルを選択").foregroundColor(.gray)) {
+                        Section(header: sectionHeader("サークルを選択")) {
                             ForEach(authManager.joinedCircles) { circle in
                                 let isCurrent = authManager.currentCircleId == circle.id
                                 Button {
                                     authManager.setCurrentCircle(circleId: circle.id) { _ in
                                         store.startListeningMatches()
                                     }
-                                    inviteCode = ""
-                                    copied = false
                                     showCircleSelectSheet = false
                                 } label: {
                                     CircleSelectRow(
                                         name: circle.name,
-                                        code: circle.circleCode,
                                         isCurrent: isCurrent
                                     )
                                 }
-                                .listRowBackground(Color.white.opacity(0.06))
+                                .listRowBackground(CircleTabStyle.rowBackground)
                             }
                         }
                     }
@@ -201,8 +211,15 @@ struct CircleSwitchView: View {
             }
             .onAppear {
                 authManager.refreshCircles()
+                authManager.fetchCurrentCircleMembers()
             }
         }
+    }
+
+    private var memberSummary: Int {
+        let members = authManager.currentCircleMembers.count
+        if members > 0 { return members }
+        return authManager.currentCircleGuests.count
     }
 
     private func deleteCurrentCircle() async {
@@ -216,8 +233,6 @@ struct CircleSwitchView: View {
             try await authManager.deleteCircle(current)
             store.stopListeningMatches()
             store.startListeningMatches()
-            inviteCode = ""
-            copied = false
         } catch {
             deleteError = error.localizedDescription
         }
@@ -229,23 +244,24 @@ struct CircleSwitchView: View {
         }
         return authManager.joinedCircles.first { $0.id == id }
     }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title).foregroundColor(.gray)
+    }
+}
+
+private enum CircleTabStyle {
+    static let rowBackground = Color.white.opacity(0.06)
 }
 
 private struct CircleSelectRow: View {
     let name: String
-    let code: String
     let isCurrent: Bool
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(name)
-                    .foregroundColor(.white)
-
-                Text(code)
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
+            Text(name)
+                .foregroundColor(.white)
 
             Spacer()
 

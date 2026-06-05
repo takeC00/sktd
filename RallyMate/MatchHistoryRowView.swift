@@ -4,7 +4,7 @@ struct MatchHistoryRowView: View {
 
     let history: MatchResult
     let store: AppStore
-    let currentUserName: String
+    let currentUserId: String
     let showOnlyOpponent: Bool
 
     var body: some View {
@@ -16,54 +16,22 @@ struct MatchHistoryRowView: View {
                 spacing: 10
             ) {
 
-                // MARK: 対戦カード
-
                 HStack(spacing: 8) {
 
-                    // チームA
-
-                    HStack(spacing: 4) {
-
-                        Text(
-                            history.teamAPlayers.map { store.memberName(for: $0) }.joined(separator: "・")
-                        )
-
-                        if history.winner == "A" {
-
-                            Text("👑")
-                        }
-                    }
-                    .foregroundColor(
-                        history.winner == "A"
-                        ? .blue
-                        : .white
+                    teamLabel(
+                        players: history.teamAPlayers,
+                        isWinner: history.winner == "A"
                     )
 
                     Text("vs")
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.gray)
 
-                    // チームB
-
-                    HStack(spacing: 4) {
-
-                        Text(
-                            history.teamBPlayers.map { store.memberName(for: $0) }.joined(separator: "・")
-                        )
-
-                        if history.winner == "B" {
-
-                            Text("👑")
-                        }
-                    }
-                    .foregroundColor(
-                        history.winner == "B"
-                        ? .blue
-                        : .white
+                    teamLabel(
+                        players: history.teamBPlayers,
+                        isWinner: history.winner == "B"
                     )
                 }
                 .font(.headline)
-
-                // MARK: スコア
 
                 HStack(spacing: 8) {
 
@@ -75,12 +43,12 @@ struct MatchHistoryRowView: View {
                             "\(score.teamAScore)-\(score.teamBScore)"
                         )
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.gray)
 
                         if index != history.setScores.count - 1 {
 
                             Text("|")
-                                .foregroundColor(.gray.opacity(0.5))
+                                .foregroundStyle(.gray.opacity(0.5))
                         }
                     }
                 }
@@ -88,26 +56,35 @@ struct MatchHistoryRowView: View {
 
             Spacer()
 
-            // MARK: 矢印
-
             Image(systemName: "chevron.right")
-                .foregroundColor(.gray.opacity(0.7))
+                .foregroundStyle(.gray.opacity(0.7))
         }
         .padding()
         .background(
-
             RoundedRectangle(cornerRadius: 24)
-                .fill(
-                    Color.white.opacity(0.06)
-                )
+                .fill(Color.white.opacity(0.06))
         )
         .overlay(
-
             RoundedRectangle(cornerRadius: 24)
-                .stroke(
-                    Color.white.opacity(0.05),
-                    lineWidth: 1
-                )
+                .stroke(Color.white.opacity(0.05), lineWidth: 1)
         )
+    }
+
+    private func teamLabel(players: [String], isWinner: Bool) -> some View {
+        let containsSelf = players.contains(currentUserId)
+        let nameColor: Color = containsSelf ? .orange : .white
+
+        return HStack(spacing: 4) {
+            Text(
+                players.map { store.memberName(for: $0) }.joined(separator: "・")
+            )
+            .foregroundStyle(nameColor)
+
+            if isWinner {
+                Image(systemName: "crown.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.blue)
+            }
+        }
     }
 }

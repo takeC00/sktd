@@ -4,11 +4,28 @@ import Foundation
 struct CircleMembership: Identifiable {
     let id: String
     let circleId: String
-    let userId: String
+    let userId: String?
     let userName: String
     var rating: Int
     var role: String
+    let memberType: MemberType
+    let level: String?
+    let notes: String?
+    let isActive: Bool
     let joinedAt: Date
+
+    var isRegistered: Bool { memberType == .registered }
+    var isManual: Bool { memberType == .manual }
+
+    /// 試合データに保存する参加者 ID
+    var matchParticipantId: String {
+        switch memberType {
+        case .registered:
+            return userId ?? id
+        case .manual:
+            return ManualMemberIdentity.playerId(circleMemberDocumentId: id)
+        }
+    }
 }
 
 enum MatchType: String, CaseIterable {
@@ -32,7 +49,7 @@ struct MatchResult: Identifiable {
     let setScores: [SetScore]
     let winner: String
     let ratingDiff: Int
-    /// 試合登録時に適用したプレイヤーごとのレート変動（userId → 変動値）
+    /// 試合登録時に適用したプレイヤーごとのレート変動（participantId → 変動値）
     var ratingChangesByUserId: [String: Int]
 }
 

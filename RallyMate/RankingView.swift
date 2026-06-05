@@ -7,6 +7,14 @@ struct RankingView: View {
     @StateObject private var authManager =
         FirebaseAuthManager.shared
 
+    @State private var showAccountSettings = false
+    @State private var showRatingQR = false
+
+    private var currentCircle: Circle? {
+        guard let id = authManager.currentCircleId else { return nil }
+        return authManager.joinedCircles.first { $0.id == id }
+    }
+
     var rankedMembers: [CircleMembership] {
         authManager.currentCircleMembers
     }
@@ -45,6 +53,25 @@ struct RankingView: View {
             .toolbarBackground(.black, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showRatingQR = true
+                    } label: {
+                        Image(systemName: "qrcode")
+                            .foregroundStyle(.white)
+                    }
+                    .accessibilityLabel("本日のレート QR")
+                    .disabled(currentCircle == nil)
+                }
+            }
+            .sheet(isPresented: $showRatingQR) {
+                if let circle = currentCircle {
+                    MateRatingQRView(store: store, circle: circle)
+                }
+            }
+            .accountToolbar(showAccountSettings: $showAccountSettings)
+            .accountSettingsSheet(isPresented: $showAccountSettings)
             .onAppear {
                 authManager.refreshCircles()
             }

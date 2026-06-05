@@ -20,10 +20,24 @@ enum VisitorIdentity {
     }
 }
 
-struct CircleVisitor: Identifiable, Equatable {
-    let playerId: String
-    let rosterDocumentId: String
+struct CircleGuestParticipant: Identifiable, Equatable {
+    let matchParticipantId: String
     let name: String
+    /// 今日だけ参加の経験者 / 初心者（`circleDayParticipants.level`）
+    let level: String?
 
-    var id: String { playerId }
+    var id: String { matchParticipantId }
+
+    init(matchParticipantId: String, name: String, level: String? = nil) {
+        self.matchParticipantId = matchParticipantId
+        self.name = name
+        self.level = level
+    }
+}
+
+/// 後方互換
+typealias CircleVisitor = CircleGuestParticipant
+
+extension CircleGuestParticipant {
+    var playerId: String { matchParticipantId }
 }

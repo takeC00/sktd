@@ -102,14 +102,14 @@ struct RatingExplanationView: View {
                     Text("ランク")
                         .font(.headline)
 
-                    rankRow(rank: "SS", range: "2200以上")
-                    rankRow(rank: "S", range: "2000〜2199")
-                    rankRow(rank: "A", range: "1800〜1999")
-                    rankRow(rank: "B", range: "1600〜1799")
-                    rankRow(rank: "C", range: "1400〜1599")
-                    rankRow(rank: "D", range: "1200〜1399")
-                    rankRow(rank: "E", range: "1000〜1199")
-                    rankRow(rank: "F", range: "999以下")
+                    rankRow(tier: .SS, range: "2200以上")
+                    rankRow(tier: .S, range: "2000〜2199")
+                    rankRow(tier: .A, range: "1800〜1999")
+                    rankRow(tier: .B, range: "1600〜1799")
+                    rankRow(tier: .C, range: "1400〜1599")
+                    rankRow(tier: .D, range: "1200〜1399")
+                    rankRow(tier: .E, range: "1000〜1199")
+                    rankRow(tier: .F, range: "999以下")
                 }
                 .padding()
                 .background(Color.gray.opacity(0.08))
@@ -226,10 +226,11 @@ struct RatingExplanationView: View {
         }
     }
 
-    func rankRow(rank: String, range: String) -> some View {
+    func rankRow(tier: RankTier, range: String) -> some View {
         HStack {
-            Text(rank)
+            Text(tier.rawValue)
                 .bold()
+                .foregroundStyle(tier.color)
                 .frame(width: 44, alignment: .leading)
 
             Text(range)

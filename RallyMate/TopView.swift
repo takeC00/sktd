@@ -7,9 +7,7 @@ struct TopView: View {
     @StateObject private var authManager =
         FirebaseAuthManager.shared
 
-    @State private var showLogoutAlert = false
-    @State private var showDeleteAccountSheet = false
-    @State private var showProfileSettings = false
+    @State private var showAccountSettings = false
 
     var myRating: Int {
         store.ratingInCurrentCircle(userId: store.currentUserId)
@@ -132,47 +130,12 @@ struct TopView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
 
-            // MARK: ログアウト
-
             .toolbar {
-
-                ToolbarItem(
-                    placement: .topBarTrailing
-                ) {
-
-                    Menu {
-                        if !authManager.currentUserName.isEmpty {
-                            Text(authManager.currentUserName)
-                        }
-                        if let email = authManager.currentUserEmail {
-                            Text(email)
-                                .font(.caption)
-                        }
-
-                        Button {
-                            showProfileSettings = true
-                        } label: {
-                            Label("表示名を編集", systemImage: "person.crop.circle")
-                        }
-
-                        Button(role: .destructive) {
-                            showLogoutAlert = true
-                        } label: {
-                            Label("ログアウト", systemImage: "rectangle.portrait.and.arrow.right")
-                        }
-
-                        Button(role: .destructive) {
-                            showDeleteAccountSheet = true
-                        } label: {
-                            Label("アカウント削除", systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .foregroundColor(.white)
-                    }
+                ToolbarItem(placement: .topBarTrailing) {
+                    AccountToolbarMenu(showAccountSettings: $showAccountSettings)
                 }
             }
-
+            .accountSettingsSheet(isPresented: $showAccountSettings)
             .onAppear {
                 authManager.refreshCircles()
                 store.startListeningMatches()
@@ -180,40 +143,6 @@ struct TopView: View {
             .onChange(of: authManager.currentCircleId) { _, _ in
                 authManager.fetchCurrentCircleMembers()
                 store.startListeningMatches()
-            }
-
-            .alert(
-                "ログアウトしますか？",
-                isPresented: $showLogoutAlert
-            ) {
-
-                Button(
-                    "キャンセル",
-                    role: .cancel
-                ) {
-                }
-
-                Button(
-                    "ログアウト",
-                    role: .destructive
-                ) {
-
-                    authManager.logout()
-                }
-
-            } message: {
-
-                Text(
-                    "現在のアカウントからログアウトします。"
-                )
-            }
-            .sheet(isPresented: $showDeleteAccountSheet) {
-                DeleteAccountView()
-            }
-            .sheet(isPresented: $showProfileSettings) {
-                NavigationView {
-                    ProfileSettingsView()
-                }
             }
         }
     }

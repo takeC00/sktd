@@ -276,20 +276,41 @@ class AppStore: ObservableObject {
     }
 
     func ratingForParticipant(_ playerId: String, circleId: String) -> Int {
-        if VisitorIdentity.isVisitor(playerId) {
-            return VisitorIdentity.fixedRating
+        if GuestParticipantIdentity.isGuest(playerId) {
+            return GuestParticipantIdentity.fixedRating
         }
-        return ratingInCircle(circleId: circleId, userId: playerId)
+        return member(for: playerId, in: members(in: circleId))?.rating
+            ?? RatingDefaults.initialRating
     }
 
     func participantDisplayName(for playerId: String) -> String {
-        if VisitorIdentity.isVisitor(playerId) {
-            return authManager.visitorName(for: playerId) ?? VisitorIdentity.displayName
+        if GuestParticipantIdentity.isGuest(playerId) {
+            if let name = authManager.guestName(for: playerId) {
+                return "\(name)（今日だけ参加）"
+            }
+            return "今日だけ参加"
         }
-        let name = members(in: authManager.currentCircleId ?? "")
-            .first { $0.userId == playerId }?
-            .userName ?? ""
-        return name.isEmpty ? playerId : name
+        if let member = member(for: playerId, in: members(in: authManager.currentCircleId ?? "")) {
+            if member.isManual {
+                return "\(member.userName)（手動登録）"
+            }
+            return member.userName
+        }
+        return playerId
+    }
+
+    private func member(
+        for participantId: String,
+        in members: [CircleMembership]
+    ) -> CircleMembership? {
+        if ManualMemberIdentity.isManual(participantId),
+           let docId = ManualMemberIdentity.circleMemberDocumentId(from: participantId) {
+            return members.first { $0.id == docId }
+        }
+        if GuestParticipantIdentity.isGuest(participantId) {
+            return nil
+        }
+        return members.first { $0.userId == participantId || $0.matchParticipantId == participantId }
     }
 
     func calculateEloDiff(
@@ -455,9 +476,8 @@ class AppStore: ObservableObject {
     }
 
     private func ratingInCircle(circleId: String, userId: String) -> Int {
-        members(in: circleId)
-            .first { $0.userId == userId }?
-            .rating ?? RatingDefaults.initialRating
+        member(for: userId, in: members(in: circleId))?.rating
+            ?? RatingDefaults.initialRating
     }
 
     private func applyMatchImpact(
@@ -477,14 +497,14 @@ class AppStore: ObservableObject {
         let members = members(in: circleId)
         let allPlayers = match.teamAPlayers + match.teamBPlayers
 
-        for userId in allPlayers {
-            if VisitorIdentity.isVisitor(userId) {
+        for participantId in allPlayers {
+            if GuestParticipantIdentity.isGuest(participantId) {
                 continue
             }
 
             guard
-                let member = members.first(where: { $0.userId == userId }),
-                let rawDiff = playerRatingDelta(match: match, playerId: userId)
+                let member = member(for: participantId, in: members),
+                let rawDiff = playerRatingDelta(match: match, playerId: participantId)
             else {
                 continue
             }
@@ -506,7 +526,7 @@ class AppStore: ObservableObject {
             ratings[member.id] = updated
 
             if sign > 0, recordChanges {
-                changesByUserId[userId] = updated - current
+                changesByUserId[participantId] = updated - current
             }
         }
     }
@@ -532,5 +552,28 @@ class AppStore: ObservableObject {
 
     func memberName(for userId: String) -> String {
         participantDisplayName(for: userId)
+    }
+
+    func matches(on dateKey: String, circleId: String) -> [MatchResult] {
+        matchResults.filter {
+            $0.circleId == circleId && formatOnlyDate($0.date) == dateKey
+        }
+    }
+
+    func totalRatingChange(
+        for participantId: String,
+        on dateKey: String,
+        circleId: String
+    ) -> Int {
+        matches(on: dateKey, circleId: circleId)
+            .compactMap { userRatingChange(for: $0, userId: participantId) }
+            .reduce(0, +)
+    }
+
+    func membership(
+        for participantId: String,
+        in members: [CircleMembership]
+    ) -> CircleMembership? {
+        member(for: participantId, in: members)
     }
 }

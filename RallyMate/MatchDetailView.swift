@@ -38,37 +38,17 @@ struct MatchDetailView: View {
 
                     HStack(spacing: 8) {
 
-                        HStack(spacing: 4) {
-
-                            Text(
-                                match.teamAPlayers.map { store.memberName(for: $0) }.joined(separator: "・")
-                            )
-
-                            if match.winner == "A" {
-
-                                Text("👑")
-                            }
-                        }
-                        .foregroundColor(
-                            .white
+                        teamLabel(
+                            players: match.teamAPlayers,
+                            isWinner: match.winner == "A"
                         )
 
                         Text("vs")
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.gray)
 
-                        HStack(spacing: 4) {
-
-                            Text(
-                                match.teamBPlayers.map { store.memberName(for: $0) }.joined(separator: "・")
-                            )
-
-                            if match.winner == "B" {
-
-                                Text("👑")
-                            }
-                        }
-                        .foregroundColor(
-                            .white
+                        teamLabel(
+                            players: match.teamBPlayers,
+                            isWinner: match.winner == "B"
                         )
                     }
                     .font(.title3.bold())
@@ -230,5 +210,23 @@ struct MatchDetailView: View {
         formatter.dateFormat = "yyyy/MM/dd HH:mm"
 
         return formatter.string(from: date)
+    }
+
+    private func teamLabel(players: [String], isWinner: Bool) -> some View {
+        let containsSelf = players.contains(currentUserId)
+        let nameColor: Color = containsSelf ? .orange : .white
+
+        return HStack(spacing: 4) {
+            Text(
+                players.map { store.memberName(for: $0) }.joined(separator: "・")
+            )
+            .foregroundStyle(nameColor)
+
+            if isWinner {
+                Image(systemName: "crown.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.blue)
+            }
+        }
     }
 }

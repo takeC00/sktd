@@ -18,27 +18,18 @@ struct MatchInputView: View {
 
     @State private var winner = ""
     @State private var showRegisterConfirm = false
+    @State private var showAccountSettings = false
 
     @State private var setScores: [SetScore] = [
         SetScore(teamAScore: "", teamBScore: "")
     ]
 
     var playerOptions: [String] {
-        let members = authManager.currentCircleMembers.map(\.userId)
-        let visitors = authManager.currentCircleVisitors.map(\.playerId)
-        return members + visitors
+        authManager.allMatchParticipantIds
     }
 
     func displayName(for playerId: String) -> String {
-        if VisitorIdentity.isVisitor(playerId) {
-            let name = authManager.visitorName(for: playerId) ?? VisitorIdentity.displayName
-            if name == VisitorIdentity.displayName {
-                return name
-            }
-            return "\(name)（Visitor）"
-        }
-        return authManager.currentCircleMembers.first(where: { $0.userId == playerId })?.userName
-            ?? playerId
+        store.participantDisplayName(for: playerId)
     }
 
     var canRegister: Bool {
@@ -241,9 +232,12 @@ struct MatchInputView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .onAppear {
                 authManager.fetchCurrentCircleMembers()
-                authManager.fetchCurrentCircleVisitors()
             }
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    AccountToolbarMenu(showAccountSettings: $showAccountSettings)
+                }
+
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
 
@@ -252,6 +246,7 @@ struct MatchInputView: View {
                     }
                 }
             }
+            .accountSettingsSheet(isPresented: $showAccountSettings)
             .alert(
                 "試合結果を登録しますか？",
                 isPresented: $showRegisterConfirm

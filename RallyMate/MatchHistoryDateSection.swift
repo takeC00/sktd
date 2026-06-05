@@ -6,7 +6,6 @@ struct MatchHistoryDateSection: View {
 
     let date: String
     let histories: [MatchResult]
-    let currentUserName: String
 
     var body: some View {
 
@@ -37,12 +36,12 @@ struct MatchHistoryDateSection: View {
 
                     } label: {
 
-                        MatchHistoryRowView(
-                            history: history,
-                            store: store,
-                            currentUserName: currentUserName,
-                            showOnlyOpponent: false
-                        )
+                                MatchHistoryRowView(
+                                    history: history,
+                                    store: store,
+                                    currentUserId: store.currentUserId,
+                                    showOnlyOpponent: false
+                                )
                     }
                     .buttonStyle(.plain)
                 }
