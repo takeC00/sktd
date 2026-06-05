@@ -57,6 +57,8 @@ struct MateRatingQRView: View {
                 }
             }
             .background(Color.black.ignoresSafeArea())
+            .foregroundStyle(.white)
+            .tint(.white)
             .navigationTitle("レート QR")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.black, for: .navigationBar)

@@ -39,7 +39,6 @@ struct TopView: View {
                     alignment: .leading,
                     spacing: 24
                 ) {
-                    // MARK: レーティング
 
                     VStack(
                         alignment: .leading,
@@ -112,9 +111,11 @@ struct TopView: View {
                         x: 0,
                         y: 4
                     )
+                    .rallyLightCardContent()
                 }
                 .padding()
                 .padding(.bottom, 80)
+                .foregroundStyle(.white)
             }
             .refreshable {
                 authManager.refreshCircles()
@@ -315,6 +316,7 @@ struct RecentMatchCard: View {
             )
             .fill(Color.white)
         )
+        .rallyLightCardContent()
     }
 
     func formatDate(

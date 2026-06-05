@@ -54,6 +54,8 @@ struct CircleJoinView: View {
                 }
             }
             .scrollContentBackground(.hidden)
+            .foregroundStyle(.white)
+            .tint(.white)
         }
         .navigationTitle("サークル参加")
         .navigationBarTitleDisplayMode(.inline)
@@ -64,6 +66,7 @@ struct CircleJoinView: View {
                 }
             }
         }
+        .rallyDarkFormScreen()
     }
 
     private func join() {

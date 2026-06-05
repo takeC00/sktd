@@ -202,6 +202,7 @@ struct RatingExplanationView: View {
             .padding()
         }
         .navigationTitle("計算方法")
+        .foregroundStyle(.white)
         .rallyDarkScreenBackground()
         .rallyDarkNavigationBar()
     }
@@ -273,5 +274,6 @@ struct RatingExplanationView: View {
         .background(Color.white)
         .cornerRadius(16)
         .shadow(radius: 2)
+        .rallyLightCardContent()
     }
 }
