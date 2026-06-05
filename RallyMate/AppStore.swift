@@ -263,22 +263,33 @@ class AppStore: ObservableObject {
         }
     }
 
-    func averageRating(for playerNames: [String]) -> Int {
+    func averageRating(for playerIds: [String]) -> Int {
         guard let circleId = authManager.currentCircleId else {
             return RatingDefaults.initialRating
         }
 
-        let ratings = playerNames.compactMap { userId -> Int? in
-            members(in: circleId)
-                .first { $0.userId == userId }?
-                .rating
-        }
-
+        let ratings = playerIds.map { ratingForParticipant($0, circleId: circleId) }
         if ratings.isEmpty {
             return RatingDefaults.initialRating
         }
-
         return ratings.reduce(0, +) / ratings.count
+    }
+
+    func ratingForParticipant(_ playerId: String, circleId: String) -> Int {
+        if VisitorIdentity.isVisitor(playerId) {
+            return VisitorIdentity.fixedRating
+        }
+        return ratingInCircle(circleId: circleId, userId: playerId)
+    }
+
+    func participantDisplayName(for playerId: String) -> String {
+        if VisitorIdentity.isVisitor(playerId) {
+            return authManager.visitorName(for: playerId) ?? VisitorIdentity.displayName
+        }
+        let name = members(in: authManager.currentCircleId ?? "")
+            .first { $0.userId == playerId }?
+            .userName ?? ""
+        return name.isEmpty ? playerId : name
     }
 
     func calculateEloDiff(
@@ -467,6 +478,10 @@ class AppStore: ObservableObject {
         let allPlayers = match.teamAPlayers + match.teamBPlayers
 
         for userId in allPlayers {
+            if VisitorIdentity.isVisitor(userId) {
+                continue
+            }
+
             guard
                 let member = members.first(where: { $0.userId == userId }),
                 let rawDiff = playerRatingDelta(match: match, playerId: userId)
@@ -516,9 +531,6 @@ class AppStore: ObservableObject {
     }
 
     func memberName(for userId: String) -> String {
-        guard let circleId = authManager.currentCircleId else { return "" }
-        return members(in: circleId)
-            .first { $0.userId == userId }?
-            .userName ?? ""
+        participantDisplayName(for: userId)
     }
 }

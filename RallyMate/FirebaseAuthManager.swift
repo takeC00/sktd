@@ -21,6 +21,9 @@ final class FirebaseAuthManager:
     // 選択中サークルの所属メンバー（中間テーブル）
     @Published var currentCircleMembers: [CircleMembership] = []
 
+    /// RallyMatch の Visitor（circleRoster・userId なし）
+    @Published var currentCircleVisitors: [CircleVisitor] = []
+
     @Published var currentUserName: String = ""
 
     var currentUserEmail: String? {
@@ -785,13 +788,64 @@ final class FirebaseAuthManager:
             }
     }
 
+    func visitorName(for playerId: String) -> String? {
+        guard VisitorIdentity.isVisitor(playerId) else { return nil }
+        if let rosterId = VisitorIdentity.rosterDocumentId(from: playerId),
+           let visitor = currentCircleVisitors.first(where: { $0.rosterDocumentId == rosterId }) {
+            return visitor.name
+        }
+        return currentCircleVisitors.first(where: { $0.playerId == playerId })?.name
+    }
+
+    func fetchCurrentCircleVisitors() {
+        guard let circleId = currentCircleId else {
+            DispatchQueue.main.async {
+                self.currentCircleVisitors = []
+            }
+            return
+        }
+
+        db.collection("circleRoster")
+            .whereField("circleId", isEqualTo: circleId)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print(error.localizedDescription)
+                    return
+                }
+
+                let visitors: [CircleVisitor] = snapshot?.documents.compactMap { doc in
+                    let data = doc.data()
+                    guard data["userId"] == nil,
+                          let name = data["name"] as? String,
+                          !name.isEmpty else {
+                        return nil
+                    }
+
+                    return CircleVisitor(
+                        playerId: VisitorIdentity.playerId(rosterDocumentId: doc.documentID),
+                        rosterDocumentId: doc.documentID,
+                        name: name
+                    )
+                } ?? []
+
+                DispatchQueue.main.async {
+                    self.currentCircleVisitors = visitors.sorted {
+                        $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                    }
+                }
+            }
+    }
+
     func fetchCurrentCircleMembers() {
         guard let circleId = currentCircleId else {
             DispatchQueue.main.async {
                 self.currentCircleMembers = []
+                self.currentCircleVisitors = []
             }
             return
         }
+
+        fetchCurrentCircleVisitors()
 
         db.collection("circleMembers")
             .whereField("circleId", isEqualTo: circleId)

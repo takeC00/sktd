@@ -24,12 +24,21 @@ struct MatchInputView: View {
     ]
 
     var playerOptions: [String] {
-        authManager.currentCircleMembers.map { $0.userId }
+        let members = authManager.currentCircleMembers.map(\.userId)
+        let visitors = authManager.currentCircleVisitors.map(\.playerId)
+        return members + visitors
     }
 
-    func displayName(for userId: String) -> String {
-        authManager.currentCircleMembers.first(where: { $0.userId == userId })?.userName
-        ?? userId
+    func displayName(for playerId: String) -> String {
+        if VisitorIdentity.isVisitor(playerId) {
+            let name = authManager.visitorName(for: playerId) ?? VisitorIdentity.displayName
+            if name == VisitorIdentity.displayName {
+                return name
+            }
+            return "\(name)（Visitor）"
+        }
+        return authManager.currentCircleMembers.first(where: { $0.userId == playerId })?.userName
+            ?? playerId
     }
 
     var canRegister: Bool {
@@ -231,8 +240,8 @@ struct MatchInputView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .onAppear {
-                // 画面表示時点で members が空のことがあるので再取得
                 authManager.fetchCurrentCircleMembers()
+                authManager.fetchCurrentCircleVisitors()
             }
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {

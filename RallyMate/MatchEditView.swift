@@ -61,12 +61,13 @@ struct MatchEditView: View {
     }
 
     var playerOptions: [String] {
-        authManager.currentCircleMembers.map { $0.userId }
+        let members = authManager.currentCircleMembers.map(\.userId)
+        let visitors = authManager.currentCircleVisitors.map(\.playerId)
+        return members + visitors
     }
 
-    func displayName(for userId: String) -> String {
-        authManager.currentCircleMembers.first(where: { $0.userId == userId })?.userName
-        ?? userId
+    func displayName(for playerId: String) -> String {
+        store.participantDisplayName(for: playerId)
     }
 
     var body: some View {
@@ -241,6 +242,10 @@ struct MatchEditView: View {
                         dismiss()
                     }
                 }
+            }
+            .onAppear {
+                authManager.fetchCurrentCircleMembers()
+                authManager.fetchCurrentCircleVisitors()
             }
         }
     }
