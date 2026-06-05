@@ -93,6 +93,7 @@ struct MatchEditView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .tint(.orange)
                 }
 
                 // MARK: チームA

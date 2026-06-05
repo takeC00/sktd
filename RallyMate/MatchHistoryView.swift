@@ -81,7 +81,6 @@ struct MatchHistoryView: View {
                 Color.black.ignoresSafeArea()
             )
             .foregroundStyle(.white)
-            .tint(.white)
 
             .navigationTitle("試合履歴")
             .navigationBarTitleDisplayMode(.inline)

@@ -54,8 +54,6 @@ struct CircleJoinView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .foregroundStyle(.white)
-            .tint(.white)
         }
         .navigationTitle("サークル参加")
         .navigationBarTitleDisplayMode(.inline)

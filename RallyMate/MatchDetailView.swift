@@ -155,7 +155,6 @@ struct MatchDetailView: View {
             Color.black.ignoresSafeArea()
         )
         .foregroundStyle(.white)
-        .tint(.white)
         .navigationTitle("試合詳細")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.black, for: .navigationBar)
