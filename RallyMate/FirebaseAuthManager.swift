@@ -806,13 +806,19 @@ final class FirebaseAuthManager:
                     guard
                         let circleId = data["circleId"] as? String,
                         let userId = data["userId"] as? String,
-                        let userName = data["userName"] as? String,
-                        let rating = data["rating"] as? Int,
                         let role = data["role"] as? String,
                         let joinedAt = data["joinedAt"] as? Timestamp
                     else {
                         return nil
                     }
+
+                    let userName = (data["userName"] as? String)
+                        ?? (data["nickname"] as? String)
+                        ?? ""
+                    guard !userName.isEmpty else { return nil }
+
+                    let rating = Self.intValue(from: data["rating"])
+                        ?? RatingDefaults.initialRating
 
                     return CircleMembership(
                         id: doc.documentID,
@@ -893,6 +899,15 @@ final class FirebaseAuthManager:
     var isLoggedIn: Bool {
 
         currentUser != nil
+    }
+
+    private static func intValue(from value: Any?) -> Int? {
+        switch value {
+        case let number as Int: number
+        case let number as Int64: Int(number)
+        case let number as Double: Int(number)
+        default: nil
+        }
     }
 }
 
