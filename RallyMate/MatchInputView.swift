@@ -80,8 +80,7 @@ struct MatchInputView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color.black
-                    .ignoresSafeArea()
+                matchInputBackground
 
                 Color.clear
                     .contentShape(Rectangle())
@@ -261,6 +260,12 @@ struct MatchInputView: View {
                 Text("登録後、レーティングと試合履歴に反映されます。")
             }
         }
+    }
+
+    private var matchInputBackground: some View {
+        Color.black
+            .ignoresSafeArea()
+            .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
     func playerPicker(
