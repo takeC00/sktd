@@ -9,6 +9,7 @@ struct TopView: View {
 
     @State private var showLogoutAlert = false
     @State private var showDeleteAccountSheet = false
+    @State private var showProfileSettings = false
 
     var myRating: Int {
         store.ratingInCurrentCircle(userId: store.currentUserId)
@@ -169,6 +170,20 @@ struct TopView: View {
                 ) {
 
                     Menu {
+                        if !authManager.currentUserName.isEmpty {
+                            Text(authManager.currentUserName)
+                        }
+                        if let email = authManager.currentUser?.email {
+                            Text(email)
+                                .font(.caption)
+                        }
+
+                        Button {
+                            showProfileSettings = true
+                        } label: {
+                            Label("表示名を編集", systemImage: "person.crop.circle")
+                        }
+
                         Button(role: .destructive) {
                             showLogoutAlert = true
                         } label: {
@@ -219,6 +234,11 @@ struct TopView: View {
             }
             .sheet(isPresented: $showDeleteAccountSheet) {
                 DeleteAccountView()
+            }
+            .sheet(isPresented: $showProfileSettings) {
+                NavigationView {
+                    ProfileSettingsView()
+                }
             }
         }
     }

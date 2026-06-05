@@ -131,6 +131,44 @@ final class FirebaseAuthManager:
         }
     }
 
+    // MARK: 表示名更新
+
+    func updateDisplayName(_ name: String) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            throw NSError(
+                domain: "RallyMate",
+                code: -2,
+                userInfo: [NSLocalizedDescriptionKey: "ログイン情報が取得できません"]
+            )
+        }
+
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw NSError(
+                domain: "RallyMate",
+                code: -3,
+                userInfo: [NSLocalizedDescriptionKey: "表示名を入力してください"]
+            )
+        }
+
+        try await db.collection("users").document(uid).updateData([
+            "name": trimmed,
+            "updatedAt": Timestamp()
+        ])
+
+        let memberships = try await db.collection("circleMembers")
+            .whereField("userId", isEqualTo: uid)
+            .getDocuments()
+
+        for document in memberships.documents {
+            try await document.reference.updateData(["userName": trimmed])
+        }
+
+        await MainActor.run {
+            self.currentUserName = trimmed
+        }
+    }
+
     // MARK: ログアウト
 
     func logout() {
@@ -314,6 +352,7 @@ final class FirebaseAuthManager:
         name: String,
         sportName: String,
         description: String = "",
+        location: String = "",
         completion: @escaping (
             Result<String, Error>
         ) -> Void
@@ -356,6 +395,8 @@ final class FirebaseAuthManager:
             "description": description,
 
             "sportName": sportName,
+
+            "location": location,
 
             "ownerId": uid,
 
