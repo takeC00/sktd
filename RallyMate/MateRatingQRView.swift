@@ -9,16 +9,10 @@ struct MateRatingQRView: View {
     @StateObject private var authManager = FirebaseAuthManager.shared
 
     @State private var snapshot: DailyRatingSnapshot?
+    @State private var shareURL: URL?
     @State private var errorMessage: String?
+    @State private var publishWarning: String?
     @State private var isPublishing = true
-
-    private var urlString: String {
-        guard let snapshot else { return "" }
-        return MateAppConfig.dailyRatingURL(
-            circleId: snapshot.circleId,
-            dateKey: snapshot.dateKey
-        )?.absoluteString ?? ""
-    }
 
     var body: some View {
         NavigationStack {
@@ -35,7 +29,14 @@ struct MateRatingQRView: View {
                 } else if let snapshot {
                     ScrollView {
                         VStack(spacing: 24) {
-                            qrSection
+                            if let publishWarning {
+                                Text(publishWarning)
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            qrSection(for: shareURL)
 
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(snapshot.circleName)
@@ -67,14 +68,15 @@ struct MateRatingQRView: View {
                 }
             }
             .task {
-                await publishSnapshot()
+                await prepareSnapshot()
             }
         }
     }
 
-    private var qrSection: some View {
+    private func qrSection(for url: URL?) -> some View {
         Group {
-            if let qr = QRCodeGenerator.image(from: urlString), !urlString.isEmpty {
+            if let url,
+               let qr = QRCodeGenerator.image(from: url.absoluteString) {
                 qr
                     .interpolation(.none)
                     .resizable()
@@ -84,8 +86,16 @@ struct MateRatingQRView: View {
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
             } else {
-                Text("QRを生成できません")
-                    .foregroundStyle(.white)
+                VStack(spacing: 8) {
+                    Text("QRを生成できません")
+                        .foregroundStyle(.white)
+                    if let url {
+                        Text(url.absoluteString)
+                            .font(.caption2)
+                            .foregroundStyle(.gray)
+                            .multilineTextAlignment(.center)
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -103,18 +113,38 @@ struct MateRatingQRView: View {
         }
     }
 
-    private func publishSnapshot() async {
+    private func prepareSnapshot() async {
         isPublishing = true
         errorMessage = nil
+        publishWarning = nil
+        shareURL = nil
         defer { isPublishing = false }
 
+        store.startListeningMatches()
+        authManager.fetchCurrentCircleMembers()
+
         do {
-            snapshot = try await DailyRatingSnapshotService.shared.publishSnapshot(
+            let built = try DailyRatingSnapshotService.shared.prepareSnapshot(
                 store: store,
                 circleId: circle.id,
                 circleName: circle.name,
                 members: authManager.currentCircleMembers
             )
+            guard let url = MateAppConfig.dailyRatingURL(
+                circleId: built.circleId,
+                dateKey: built.dateKey
+            ) else {
+                throw URLError(.badURL)
+            }
+
+            snapshot = built
+            shareURL = url
+
+            do {
+                try await DailyRatingSnapshotService.shared.publish(built)
+            } catch {
+                publishWarning = "Web への公開に失敗しました（QR は読み取れます）: \(error.localizedDescription)"
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

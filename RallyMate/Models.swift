@@ -65,8 +65,5 @@ func formatDate(_ date: Date) -> String {
 }
 
 func formatOnlyDate(_ date: Date) -> String {
-    let formatter = DateFormatter()
-    formatter.locale = Locale(identifier: "ja_JP")
-    formatter.dateFormat = "yyyy/MM/dd"
-    return formatter.string(from: date)
+    MateAppConfig.dateKeyInJST(for: date)
 }

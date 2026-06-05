@@ -11,12 +11,16 @@ enum MateAppConfig {
         return URL(string: "\(hostingBaseURL)/rating/\(circleId.lowercased())?date=\(dateSegment)")
     }
 
-    static func todayDateKeyInJST(now: Date = .now) -> String {
+    static func dateKeyInJST(for date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ja_JP")
         formatter.timeZone = TimeZone(identifier: "Asia/Tokyo")
         formatter.dateFormat = "yyyy/MM/dd"
-        return formatter.string(from: now)
+        return formatter.string(from: date)
+    }
+
+    static func todayDateKeyInJST(now: Date = .now) -> String {
+        dateKeyInJST(for: now)
     }
 
     static func snapshotDocumentId(circleId: String, dateKey: String) -> String {

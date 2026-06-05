@@ -1,8 +1,9 @@
 import Foundation
+import FirebaseCore
 
 enum MateFirebaseConfig {
     static var projectId: String? {
-        plistString(forKey: "PROJECT_ID")
+        plistString(forKey: "PROJECT_ID") ?? FirebaseApp.app()?.options.projectID
     }
 
     /// Firebase Hosting（QR 用・RallyMatch と同一プロジェクト）

@@ -107,19 +107,17 @@ final class DailyRatingSnapshotService {
             ])
     }
 
-    func publishSnapshot(
+    func prepareSnapshot(
         store: AppStore,
         circleId: String,
         circleName: String,
         members: [CircleMembership]
-    ) async throws -> DailyRatingSnapshot {
-        let snapshot = try buildSnapshot(
+    ) throws -> DailyRatingSnapshot {
+        try buildSnapshot(
             store: store,
             circleId: circleId,
             circleName: circleName,
             members: members
         )
-        try await publish(snapshot)
-        return snapshot
     }
 }
