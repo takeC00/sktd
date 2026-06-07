@@ -286,14 +286,11 @@ class AppStore: ObservableObject {
     func participantDisplayName(for playerId: String) -> String {
         if GuestParticipantIdentity.isGuest(playerId) {
             if let name = authManager.guestName(for: playerId) {
-                return "\(name)（今日だけ参加）"
+                return name
             }
             return "今日だけ参加"
         }
         if let member = member(for: playerId, in: members(in: authManager.currentCircleId ?? "")) {
-            if member.isManual {
-                return "\(member.userName)（手動登録）"
-            }
             return member.userName
         }
         return playerId
