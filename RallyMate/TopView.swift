@@ -31,7 +31,7 @@ struct TopView: View {
 
     var body: some View {
 
-        NavigationView {
+        NavigationStack {
 
             ScrollView {
 

@@ -26,7 +26,7 @@ struct LoginView: View {
 
     var body: some View {
 
-        NavigationView {
+        NavigationStack {
 
             ScrollViewReader { proxy in
 
@@ -37,11 +37,6 @@ struct LoginView: View {
                     Image("login_bg")
                         .resizable()
                         .scaledToFill()
-                        .frame(
-                            width: UIScreen.main.bounds.width,
-                            height: UIScreen.main.bounds.height
-                        )
-                        .clipped()
                         .ignoresSafeArea()
 
                     // MARK: Overlay

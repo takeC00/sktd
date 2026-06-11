@@ -16,11 +16,6 @@ struct SplashView: View {
             Image("splash_bg")
                 .resizable()
                 .scaledToFill()
-                .frame(
-                    width: UIScreen.main.bounds.width,
-                    height: UIScreen.main.bounds.height
-                )
-                .clipped()
                 .ignoresSafeArea()
         }
         .opacity(opacity)

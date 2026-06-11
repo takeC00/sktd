@@ -70,7 +70,7 @@ struct MatchEditView: View {
 
     var body: some View {
 
-        NavigationView {
+        NavigationStack {
 
             Form {
 

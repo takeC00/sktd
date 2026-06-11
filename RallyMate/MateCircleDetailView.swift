@@ -10,12 +10,8 @@ struct MateCircleDetailView: View {
     @State private var showDeleteMemberConfirm = false
     @State private var isDeletingMember = false
 
-    private var registeredMembers: [CircleMembership] {
-        authManager.currentCircleMembers.filter(\.isRegistered)
-    }
-
-    private var manualMembers: [CircleMembership] {
-        authManager.currentCircleMembers.filter(\.isManual)
+    private var circleMembers: [CircleMembership] {
+        authManager.currentCircleMembers
     }
 
     private var dayGuests: [CircleGuestParticipant] {
@@ -25,7 +21,7 @@ struct MateCircleDetailView: View {
     }
 
     private var isEmpty: Bool {
-        registeredMembers.isEmpty && manualMembers.isEmpty && dayGuests.isEmpty
+        circleMembers.isEmpty && dayGuests.isEmpty
     }
 
     var body: some View {
@@ -38,46 +34,24 @@ struct MateCircleDetailView: View {
                 )
             } else {
                 List {
-                    if !registeredMembers.isEmpty {
+                    if !circleMembers.isEmpty {
                         Section {
-                            ForEach(registeredMembers) { member in
+                            ForEach(circleMembers) { member in
                                 NavigationLink {
-                                    MateRegisteredMemberFormView(
-                                        circle: circle,
-                                        member: member
-                                    )
-                                } label: {
-                                    memberRow(member, subtitle: roleLabel(member.role))
-                                }
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                        if canRemoveMember(member) {
-                                            Button(role: .destructive) {
-                                                pendingMemberDelete = member
-                                                showDeleteMemberConfirm = true
-                                            } label: {
-                                                Label("削除", systemImage: "trash")
-                                            }
-                                        }
+                                    if member.isManual {
+                                        MateManualMemberFormView(
+                                            circleId: circle.id,
+                                            member: member,
+                                            createdBy: authManager.uid ?? ""
+                                        )
+                                    } else {
+                                        MateRegisteredMemberFormView(
+                                            circle: circle,
+                                            member: member
+                                        )
                                     }
-                            }
-                        } header: {
-                            Text("サークルメンバー")
-                        } footer: {
-                            Text("Hub / Match / Mate で招待コード参加した正式メンバーです。")
-                        }
-                    }
-
-                    if !manualMembers.isEmpty {
-                        Section {
-                            ForEach(manualMembers) { member in
-                                NavigationLink {
-                                    MateManualMemberFormView(
-                                        circleId: circle.id,
-                                        member: member,
-                                        createdBy: authManager.uid ?? ""
-                                    )
                                 } label: {
-                                    memberRow(member, subtitle: "手動追加")
+                                    memberRow(member)
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     if canRemoveMember(member) {
@@ -91,9 +65,9 @@ struct MateCircleDetailView: View {
                                 }
                             }
                         } header: {
-                            Text("サークルメンバー（手動追加）")
+                            Text("サークルメンバー")
                         } footer: {
-                            Text("アプリ未登録の常連メンバーです。レーティング・試合履歴の永続管理対象です。")
+                            Text("招待コード参加・手動登録のメンバーをまとめて表示します。アカウント登録済みのメンバーには認証マークが付きます。")
                         }
                     }
 
@@ -186,13 +160,21 @@ struct MateCircleDetailView: View {
         }
     }
 
-    private func memberRow(_ member: CircleMembership, subtitle: String) -> some View {
+    private func memberRow(_ member: CircleMembership) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(member.userName)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                Text(subtitle)
+                HStack(spacing: 6) {
+                    Text(member.userName)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    if member.isRegistered {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.orange)
+                            .accessibilityLabel("アカウント登録済み")
+                    }
+                }
+                Text(roleLabel(member.role))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

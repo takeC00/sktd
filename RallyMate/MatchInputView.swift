@@ -78,7 +78,7 @@ struct MatchInputView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 matchInputBackground
 
